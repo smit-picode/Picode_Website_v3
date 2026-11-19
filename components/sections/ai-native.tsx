@@ -686,7 +686,10 @@ function AIStory() {
 
   return (
     <section ref={sectionRef} id="ai-native" className="relative scroll-mt-0">
-      <div aria-hidden className="absolute -right-40 top-10 -z-10 size-[44rem] bg-glow-secondary opacity-[0.1]" />
+      {/* Clip the off-edge glow here (not on the section, which must not clip) so it can't widen the page. */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute -right-40 top-10 size-[44rem] bg-glow-secondary opacity-[0.1]" />
+      </div>
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-48 bg-gradient-to-b from-surface-muted to-transparent" />
       <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-48 bg-gradient-to-b from-transparent to-surface-muted" />
 
