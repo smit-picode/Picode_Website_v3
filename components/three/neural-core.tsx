@@ -442,7 +442,10 @@ export default function NeuralCore({ dark, active }: { dark: boolean; active: bo
       <Canvas
         frameloop={active ? "always" : "never"}
         dpr={[1, 1.75]}
-        camera={{ position: [0, 0, 6.2], fov: 45 }}
+        // Far enough back that the outer orbit ring (r 2.55) stays inside the
+        // square canvas at any rotation: worst-case projected extent ≈ 2.73 vs a
+        // visible half-height of ≈ 2.98 at z = 7.2 with fov 45.
+        camera={{ position: [0, 0, 7.2], fov: 45 }}
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
         style={{ background: "transparent" }}
       >
