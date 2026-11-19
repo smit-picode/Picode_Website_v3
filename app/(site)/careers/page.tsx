@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { ArrowUpRight, MapPin, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
+import { JobList } from "@/components/careers/job-list";
 import { Reveal, Stagger, StaggerItem } from "@/components/motion/primitives";
 import { Container } from "@/components/ui/container";
 import { HudLabel, PageHero, SectionHeading } from "@/components/ui/section";
@@ -27,31 +28,7 @@ export default async function CareersPage() {
             <SectionHeading eyebrow="Open roles" title={<>Current <span className="text-gradient-ai">openings</span></>} />
             <p className="font-mono text-sm text-gray-400">{openings.length} positions</p>
           </div>
-          <div className="mt-12 divide-y divide-gray-200/70 border-y border-gray-200/70">
-            {openings.map((j, i) => (
-              <Reveal key={j.id} delay={i * 0.05}>
-                <a
-                  href={`mailto:${settings.careersEmail}?subject=${encodeURIComponent(`Application: ${j.title}`)}`}
-                  className="group grid items-center gap-4 py-8 transition-colors sm:grid-cols-12"
-                >
-                  <div className="sm:col-span-6">
-                    <p className="font-mono text-xs uppercase tracking-widest text-secondary-strong">{j.team}</p>
-                    <h3 className="mt-2 font-display text-2xl font-semibold tracking-tight transition-colors group-hover:text-secondary-strong">{j.title}</h3>
-                    <p className="mt-1 text-sm text-gray-500">{j.summary}</p>
-                  </div>
-                  <p className="flex items-center gap-2 text-sm text-gray-600 sm:col-span-3">
-                    <MapPin className="size-4 text-gray-400" aria-hidden /> {j.location}
-                  </p>
-                  <div className="flex items-center justify-between gap-4 sm:col-span-3 sm:justify-end">
-                    <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600">{j.type}</span>
-                    <span className="inline-flex size-11 items-center justify-center rounded-full border border-gray-200 transition-all duration-300 group-hover:border-transparent group-hover:bg-gradient-primary group-hover:text-white">
-                      <ArrowUpRight className="size-5" aria-hidden />
-                    </span>
-                  </div>
-                </a>
-              </Reveal>
-            ))}
-          </div>
+          <JobList jobs={openings} careersEmail={settings.careersEmail} />
           <p className="mt-8 text-sm text-gray-500">
             Don&apos;t see your role? Send your CV to{" "}
             <a href={`mailto:${settings.careersEmail}`} className="font-medium text-secondary-strong hover:underline">{settings.careersEmail}</a>.
