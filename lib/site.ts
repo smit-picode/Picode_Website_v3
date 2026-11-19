@@ -49,6 +49,4 @@ export const underDevelopmentRoutes: Record<string, string> = {
   about: "About Us",
   careers: "Careers",
   contact: "Contact",
-  privacy: "Privacy Policy",
-  terms: "Terms of Service",
 };
