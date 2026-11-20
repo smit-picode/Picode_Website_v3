@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   motion,
   useMotionValue,
@@ -94,7 +94,25 @@ const SPHERES: SphereSpec[] = [
   { size: 70, pos: { right: "4%", top: "74%" }, depth: 0.2, art: SparkArt, roll: 11, bob: 4, delay: 0.6 },
 ];
 
+/** Same breakpoint as the `xl:block` below: narrower screens would put the spheres over the hero text. */
+const SHOW_QUERY = "(min-width: 1280px)";
+
 export function FloatingSpheres() {
+  // Mount the spheres only while the screen is wide enough. If they mounted while hidden
+  // (display: none), their drag constraints would be measured as 0×0 and, after resizing
+  // to a big screen, every sphere would be squeezed into the same spot.
+  const [wide, setWide] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(SHOW_QUERY);
+    const update = () => setWide(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  return wide ? <SphereField /> : null;
+}
+
+function SphereField() {
   const reduce = useReducedMotion();
   const areaRef = useRef<HTMLDivElement>(null);
 
@@ -116,7 +134,7 @@ export function FloatingSpheres() {
   }, [px, py, reduce]);
 
   return (
-    <div ref={areaRef} aria-hidden className="pointer-events-none absolute inset-0 z-10 hidden md:block">
+    <div ref={areaRef} aria-hidden className="pointer-events-none absolute inset-0 z-10 hidden xl:block">
       {SPHERES.map((s, i) => (
         <Sphere key={i} spec={s} area={areaRef} sx={sx} sy={sy} scrollY={scrollY} reduce={!!reduce} />
       ))}

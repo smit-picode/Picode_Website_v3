@@ -21,8 +21,12 @@ function pool() {
   if (!url) throw new DatabaseNotConfiguredError();
   if (!globalForDb.pgPool) {
     const local = /@(localhost|127\.0\.0\.1)(:\d+)?\//.test(url);
+    const useTls = !local && !/sslmode=disable/.test(url);
     globalForDb.pgPool = new Pool({
-      connectionString: url,
+      // pg treats `sslmode=require` in the URL as full certificate verification and lets it
+      // override the `ssl` option below, which breaks hosts with a private CA (e.g. Aiven).
+      // Drop it so the explicit `ssl` setting decides; the connection is still encrypted.
+      connectionString: useTls ? url.replace(/([?&])sslmode=[^&]*&?/, "$1").replace(/[?&]$/, "") : url,
       max: 5,
       idleTimeoutMillis: 30_000,
       // Hosted Postgres (Neon, Supabase, RDS…) requires TLS; local doesn't.
@@ -130,8 +134,8 @@ let ready: Promise<void> | null = null;
 function ensureSchema() {
   ready ??= (async () => {
     await pool().query(SCHEMA);
-    const { seedJobsIfEmpty } = await import("@/lib/server/careers-seed");
-    await seedJobsIfEmpty(pool());
+    const { seedDatabase } = await import("@/lib/server/seeds");
+    await seedDatabase(pool());
   })().catch((error) => {
     ready = null; // retry on the next request
     throw error;

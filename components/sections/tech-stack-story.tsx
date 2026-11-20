@@ -11,6 +11,7 @@ import {
 } from "framer-motion";
 import { useTheme } from "next-themes";
 import { ScrollHint, useAutoplay, useWheelSteps } from "@/components/motion/autoplay";
+import { useScrollActiveIntoView } from "@/components/motion/use-scroll-active-into-view";
 import { TechStackExplorer, type TechCategory } from "@/components/sections/tech-stack-explorer";
 import { Callouts } from "@/components/sections/tech-stack-3d/callouts";
 import type { TrackStore } from "@/components/sections/tech-stack-3d/scene";
@@ -130,6 +131,10 @@ function Story({ scenes }: { scenes: TechCategory[] }) {
 
   const goTo = (i: number) => auto.go(i);
 
+  // Phones: the layer tabs scroll sideways; keep the playing one visible.
+  const tabsStripRef = useRef<HTMLDivElement>(null);
+  useScrollActiveIntoView(tabsStripRef, [active]);
+
   const scene = scenes[active]!;
 
   return (
@@ -139,7 +144,7 @@ function Story({ scenes }: { scenes: TechCategory[] }) {
         <Container className="relative z-20 flex flex-col items-center text-center">
           <Heading />
 
-          <div className="no-scrollbar -mx-4 mt-5 max-w-[calc(100%+2rem)] overflow-x-auto px-4 pb-1 lg:mt-6">
+          <div ref={tabsStripRef} className="no-scrollbar -mx-4 mt-5 max-w-[calc(100%+2rem)] overflow-x-auto px-4 pb-1 lg:mt-6">
             <div
               role="tablist"
               aria-label="Technology layers"

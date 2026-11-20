@@ -314,7 +314,7 @@ export function BriefWizard({ responseTime }: { responseTime: string }) {
   return (
     <div className="grid items-start gap-10 lg:grid-cols-12 lg:gap-12">
       {/* Deck */}
-      <div className="lg:col-span-7">
+      <div className="min-w-0 lg:col-span-7">
         <Progress step={status === "sent" ? STEPS.length : step} onJump={(i) => i < step && status === "idle" && go(i)} />
 
         <div
@@ -359,7 +359,7 @@ export function BriefWizard({ responseTime }: { responseTime: string }) {
                   <Done name={a.name} refNo={ref} responseTime={responseTime} onRestart={restart} />
                 ) : (
                   <form
-                    className="relative flex h-full flex-col p-6 sm:p-9"
+                    className="relative flex h-full flex-col p-6 max-[359px]:p-4 sm:p-9"
                     noValidate
                     onSubmit={(e) => {
                       e.preventDefault();
@@ -462,7 +462,7 @@ export function BriefWizard({ responseTime }: { responseTime: string }) {
       </div>
 
       {/* Live brief */}
-      <div className="lg:col-span-5 lg:pt-14">
+      <div className="min-w-0 lg:col-span-5 lg:pt-14">
         <ProjectPreview data={preview} refNo={ref} sent={status === "sent"} />
       </div>
     </div>
@@ -628,7 +628,7 @@ function KeyTile({
       aria-pressed={multi ? on : undefined}
       onClick={onClick}
       className={cn(
-        "group relative flex items-center gap-2.5 rounded-2xl border px-3 py-3 text-left sm:gap-3 sm:px-3.5 transition-[transform,box-shadow,background-color,border-color] duration-150",
+        "group relative flex items-center gap-2.5 rounded-2xl border px-3 py-3 text-left max-[359px]:gap-2 max-[359px]:px-2.5 sm:gap-3 sm:px-3.5 transition-[transform,box-shadow,background-color,border-color] duration-150",
         on
           ? "translate-y-[3px] border-primary/60 bg-primary/[0.07] shadow-[0_0_0_rgb(var(--gray-200)),inset_0_2px_6px_rgb(var(--color-primary)/0.15)]"
           : "border-gray-200 bg-surface shadow-[0_3px_0_rgb(var(--gray-200)),0_8px_16px_-12px_rgba(15,23,42,0.25)] hover:-translate-y-px hover:border-gray-300 hover:shadow-[0_4px_0_rgb(var(--gray-200)),0_10px_18px_-12px_rgba(15,23,42,0.3)] active:translate-y-[3px] active:shadow-none",
@@ -653,7 +653,7 @@ function KeyTile({
         aria-hidden
       />
       <span className="min-w-0">
-        <span className="block font-display text-[0.9375rem] font-medium leading-tight text-gray-900">{label}</span>
+        <span className="block font-display text-[0.9375rem] font-medium leading-tight text-gray-900 max-[359px]:text-sm">{label}</span>
         {sub && <span className="mt-0.5 block text-xs text-gray-500">{sub}</span>}
       </span>
     </button>

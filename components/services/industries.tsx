@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUpRight, ShieldCheck, X } from "lucide-react";
 import { Reveal } from "@/components/motion/primitives";
+import { useScrollActiveIntoView } from "@/components/motion/use-scroll-active-into-view";
 import { Container, Eyebrow } from "@/components/ui/container";
 import { useServicesContent } from "@/components/services/content-context";
 import { cn } from "@/lib/utils";
@@ -13,6 +14,9 @@ export function IndustriesExplorer() {
   const { industries, services } = useServicesContent();
   const serviceById = Object.fromEntries(services.map((s) => [s.id, s]));
   const [activeId, setActiveId] = useState(industries[0]?.id ?? "");
+  // Phones/tablets: the industry rail scrolls sideways; bring the chosen one fully into view.
+  const railRef = useRef<HTMLDivElement>(null);
+  useScrollActiveIntoView(railRef, [activeId]);
   const ind = industries.find((i) => i.id === activeId) ?? industries[0];
   if (!ind) return null;
   const Icon = ind.icon;
@@ -37,6 +41,7 @@ export function IndustriesExplorer() {
         <div className="mt-12 grid gap-6 lg:grid-cols-[19rem_1fr] xl:grid-cols-[21rem_1fr]">
           {/* industry rail: a typographic list */}
           <div
+            ref={railRef}
             className="no-scrollbar -mx-4 flex gap-6 overflow-x-auto border-b border-gray-200 px-4 lg:mx-0 lg:block lg:overflow-visible lg:border-b-0 lg:border-t lg:border-gray-900/80 lg:px-0 dark:lg:border-gray-300"
             role="tablist"
             aria-label="Industries"

@@ -52,11 +52,11 @@ export function HeroSection() {
             </StaggerItem>
 
             <StaggerItem>
-              <dl className="mt-14 grid max-w-xl grid-cols-3 gap-4 border-t border-gray-100 pt-8 sm:gap-6">
+              <dl className="mt-14 grid max-w-xl grid-cols-3 gap-4 border-t border-gray-100 pt-8 max-[359px]:gap-3 sm:gap-6">
                 {stats.map((s) => (
                   <div key={s.label}>
                     <dt className="sr-only">{s.label}</dt>
-                    <dd className="whitespace-nowrap font-display text-base font-semibold text-gray-900 min-[420px]:text-xl sm:text-2xl">
+                    <dd className="whitespace-nowrap font-display text-base font-semibold text-gray-900 max-[359px]:text-[0.9375rem] min-[420px]:text-xl sm:text-2xl">
                       {s.value}
                     </dd>
                     <dd className="mt-1 text-xs text-gray-500 sm:text-sm">{s.label}</dd>

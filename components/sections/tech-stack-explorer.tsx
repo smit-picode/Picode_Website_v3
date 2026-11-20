@@ -141,10 +141,10 @@ function Layer({
           onClick={onToggle}
           aria-expanded={open}
           aria-controls={panelId}
-          className="group flex w-full items-center gap-4 px-4 py-4 text-left sm:px-6 sm:py-5"
+          className="group flex w-full items-center gap-4 px-4 py-4 text-left max-[359px]:gap-3 max-[359px]:px-3 sm:px-6 sm:py-5"
         >
           <span className="min-w-0 flex-1">
-            <span className="block font-display text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-primary-strong">
+            <span className="block font-display text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-primary-strong max-[359px]:tracking-[0.08em]">
               {category.layer} layer
             </span>
             <span className="mt-0.5 block font-display text-lg font-semibold text-gray-900 sm:text-xl">

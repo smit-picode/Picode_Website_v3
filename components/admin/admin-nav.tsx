@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Briefcase, Building2, FolderKanban, Inbox, Layers, LayoutDashboard, Mail, SlidersHorizontal, UserRoundSearch } from "lucide-react";
+import { Briefcase, Building2, FolderKanban, Inbox, Layers, LayoutDashboard, Mail, Scale, SlidersHorizontal, UserRoundSearch } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const adminTabs = [
@@ -12,6 +12,7 @@ export const adminTabs = [
   { id: "jobs", label: "Jobs", icon: Briefcase },
   { id: "applications", label: "Applications", icon: UserRoundSearch },
   { id: "services", label: "Services", icon: Layers },
+  { id: "legal", label: "Legal pages", icon: Scale },
   { id: "case-studies", label: "Case studies", icon: FolderKanban },
   { id: "offices", label: "Offices", icon: Building2 },
   { id: "settings", label: "Contact settings", icon: Mail },

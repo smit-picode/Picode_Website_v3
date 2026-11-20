@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 export function EngagementModels() {
   const { engagements } = useServicesContent();
   return (
-    <section className="relative bg-surface-muted py-20 lg:py-28">
+    <section id="engagement" className="relative scroll-mt-20 bg-surface-muted py-20 lg:py-28">
       <Container>
         <Reveal className="max-w-2xl">
           <Eyebrow>Ways to work together</Eyebrow>
@@ -70,7 +70,7 @@ export function ServicesFaq() {
   const { faqs } = useServicesContent();
   const [open, setOpen] = useState<number | null>(0);
   return (
-    <section className="py-20 lg:py-28">
+    <section id="faq" className="scroll-mt-20 py-20 lg:py-28">
       <Container className="grid gap-10 lg:grid-cols-12">
         <Reveal className="lg:col-span-4">
           <Eyebrow>FAQ</Eyebrow>

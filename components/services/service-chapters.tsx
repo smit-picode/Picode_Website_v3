@@ -104,7 +104,7 @@ function Chapter({ service: s, index }: { service: Service; index: number }) {
 
       {/* stage */}
       <Reveal delay={0.05} className="mt-10">
-        <div className="relative isolate flex min-h-[20rem] items-center justify-center overflow-hidden rounded-[1.75rem] p-8 sm:min-h-[24rem]" style={{ background: STAGE[index % STAGE.length] }}>
+        <div className="relative isolate flex min-h-[20rem] items-center justify-center overflow-hidden rounded-[1.75rem] p-8 max-sm:pt-12 max-[359px]:px-4 max-[359px]:pb-6 sm:min-h-[24rem]" style={{ background: STAGE[index % STAGE.length] }}>
           <div aria-hidden className="absolute inset-0 -z-10 bg-[linear-gradient(rgba(255,255,255,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.07)_1px,transparent_1px)] bg-[size:28px_28px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_75%)]" />
           <p
             aria-hidden

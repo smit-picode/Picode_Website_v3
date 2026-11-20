@@ -14,6 +14,8 @@ import {
 import { deleteUpload, saveUpload, UploadError } from "@/lib/server/media";
 import { APPLICATION_STATUSES, jobFormSchema } from "@/lib/content/careers";
 import { servicesContentSchema } from "@/lib/content/services-content";
+import { LEGAL_KEYS, LEGAL_LABEL, LEGAL_PATH, legalDocSchema } from "@/lib/content/legal-schema";
+import { resetLegalDocument, saveLegalDocument } from "@/lib/server/legal-content";
 import { DATE_FORMATS, TIME_FORMATS } from "@/lib/format";
 import { smtpFormSchema } from "@/lib/content/mail";
 import { sendTestEmail } from "@/lib/server/inquiry-email";
@@ -385,6 +387,44 @@ export async function resetServicesContentAction(): Promise<ServicesSaveState> {
   revalidatePath("/services");
   revalidatePath("/admin");
   return { ok: true, message: "Restored the original services content." };
+}
+
+/* ---------------------- Legal pages (privacy / terms) ---------------------- */
+
+export async function saveLegalContentAction(key: string, json: string): Promise<ServicesSaveState> {
+  await requireAdmin();
+  const k = z.enum(LEGAL_KEYS).safeParse(key);
+  if (!k.success) return { error: "Unknown page." };
+  let raw: unknown;
+  try {
+    raw = JSON.parse(json);
+  } catch {
+    return { error: "Couldn't read the content." };
+  }
+  const parsed = legalDocSchema.safeParse(raw);
+  if (!parsed.success) {
+    return {
+      error: "Some fields need attention.",
+      issues: parsed.error.issues.slice(0, 8).map((i) => `${i.path.join(" › ")}: ${i.message}`),
+    };
+  }
+  const ids = parsed.data.sections.map((s) => s.id);
+  if (new Set(ids).size !== ids.length) return { error: "Two sections share the same id." };
+
+  await saveLegalDocument(k.data, parsed.data);
+  revalidatePath(LEGAL_PATH[k.data]);
+  revalidatePath("/admin");
+  return { ok: true, message: `${LEGAL_LABEL[k.data]} saved.` };
+}
+
+export async function resetLegalContentAction(key: string): Promise<ServicesSaveState> {
+  await requireAdmin();
+  const k = z.enum(LEGAL_KEYS).safeParse(key);
+  if (!k.success) return { error: "Unknown page." };
+  await resetLegalDocument(k.data);
+  revalidatePath(LEGAL_PATH[k.data]);
+  revalidatePath("/admin");
+  return { ok: true, message: `Restored the original ${LEGAL_LABEL[k.data]}.` };
 }
 
 /* ------------------------------- Email ------------------------------ */

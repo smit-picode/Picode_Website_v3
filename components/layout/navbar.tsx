@@ -54,7 +54,7 @@ export function Navbar() {
             : "border-transparent bg-transparent",
         )}
       >
-        <Container className="flex h-[4.5rem] items-center justify-between gap-6">
+        <Container className="flex h-[4.5rem] items-center justify-between gap-4 lg:gap-6">
           <Logo priority className="h-8 sm:h-9" />
 
           <nav aria-label="Main" className="hidden md:block">
@@ -67,7 +67,7 @@ export function Navbar() {
                       href={item.href}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "relative z-10 block rounded-full px-4 py-2 font-display text-sm font-medium transition-colors duration-300",
+                        "relative z-10 block rounded-full px-3 py-2 font-display text-sm font-medium transition-colors duration-300 lg:px-4",
                         active ? "text-gray-900" : "text-gray-500 hover:text-gray-900",
                       )}
                     >

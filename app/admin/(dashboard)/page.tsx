@@ -3,6 +3,8 @@ import { ArrowRight, Database, Download, FolderKanban, Inbox, Mail, MailOpen, Us
 import { ApplicationsBoard } from "@/components/admin/applications-board";
 import { CaseStudiesManager } from "@/components/admin/case-studies-manager";
 import { InquiryList } from "@/components/admin/inquiry-list";
+import { LegalEditor } from "@/components/admin/legal-editor";
+import { getLegalDocumentForAdmin } from "@/lib/server/legal-content";
 import { ServicesEditor } from "@/components/admin/services-editor";
 import { SiteSettings } from "@/components/admin/site-settings";
 import { JobsManager } from "@/components/admin/jobs-manager";
@@ -15,11 +17,11 @@ import { getServicesContent, servicesContentIsCustom } from "@/lib/server/site-c
 import { mailStatus } from "@/lib/server/mail-config";
 import { getCaseStudies, getOffices, getPreferences, getSettings, getSmtp, listInquiries } from "@/lib/server/store";
 
-type Tab = "overview" | "inquiries" | "jobs" | "applications" | "services" | "case-studies" | "offices" | "settings" | "preferences";
+type Tab = "overview" | "inquiries" | "jobs" | "applications" | "services" | "legal" | "case-studies" | "offices" | "settings" | "preferences";
 
 export default async function AdminPage({ searchParams }: { searchParams: { tab?: string; job?: string } }) {
   await requireAdmin();
-  const tab: Tab = (["overview", "inquiries", "jobs", "applications", "services", "case-studies", "offices", "settings", "preferences"] as const).includes(searchParams.tab as Tab)
+  const tab: Tab = (["overview", "inquiries", "jobs", "applications", "services", "legal", "case-studies", "offices", "settings", "preferences"] as const).includes(searchParams.tab as Tab)
     ? (searchParams.tab as Tab)
     : "overview";
 
@@ -84,6 +86,20 @@ export default async function AdminPage({ searchParams }: { searchParams: { tab?
       <>
         <PageTitle title="Services page" subtitle="Services, industries, engagement models and FAQs shown on /services." />
         <ServicesEditor initial={content} isCustom={isCustom} />
+      </>
+    );
+  }
+
+  if (tab === "legal") {
+    const docs = await Promise.all([getLegalDocumentForAdmin("privacy"), getLegalDocumentForAdmin("terms")]).catch((error) => {
+      console.error("[admin] Legal pages unavailable:", error);
+      return null;
+    });
+    if (!docs) return <CareersUnavailable />;
+    return (
+      <>
+        <PageTitle title="Legal pages" subtitle="Edit the Privacy Policy and Terms of Service shown on /privacy and /terms." />
+        <LegalEditor docs={{ privacy: docs[0], terms: docs[1] }} />
       </>
     );
   }
@@ -251,9 +267,10 @@ function CareersUnavailable() {
   return (
     <div className="rounded-2xl border border-dashed border-gray-200 bg-surface p-10 text-center">
       <Database className="mx-auto size-8 text-gray-300" aria-hidden />
-      <p className="mt-3 font-semibold text-gray-900">The database isn&apos;t reachable</p>
+      {/* Deliberately generic: the real cause is logged on the server, never shown in the browser. */}
+      <p className="mt-3 font-semibold text-gray-900">Internal server error</p>
       <p className="mx-auto mt-1 max-w-md text-sm text-gray-500">
-        Jobs, applications and the services page are stored in PostgreSQL. Check that DATABASE_URL is set and the database is running, then reload.
+        This section couldn&apos;t be loaded right now. Please reload in a moment. If it keeps happening, contact your developer.
       </p>
     </div>
   );

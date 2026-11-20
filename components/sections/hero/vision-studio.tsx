@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { AnimatePresence, motion, useInView } from "framer-motion";
 import { ArrowRight, Check, Lightbulb, MessagesSquare, PenTool, Rocket, RotateCcw, Send } from "lucide-react";
+import { useScrollActiveIntoView } from "@/components/motion/use-scroll-active-into-view";
 import { VisionPreview } from "@/components/sections/hero/vision-preview";
 import { ideaFromPrompt, visionIdeas, type VisionIdea } from "@/components/sections/hero/vision-ideas";
 import { saveBriefHandoff } from "@/lib/brief-handoff";
@@ -55,6 +56,9 @@ export function VisionStudio() {
   const rootRef = useRef<HTMLDivElement>(null);
   const inView = useInView(rootRef, { amount: 0.2 });
   const [idea, setIdea] = useState<VisionIdea>(visionIdeas[0]!);
+  // The example chips scroll sideways; keep the one that's playing visible as ideas cycle.
+  const chipsRef = useRef<HTMLDivElement>(null);
+  useScrollActiveIntoView(chipsRef, [idea.id], '[aria-pressed="true"]');
   const [t, setT] = useState(0);
   const [running, setRunning] = useState(false);
   const [autoplay, setAutoplay] = useState(true);
@@ -169,13 +173,14 @@ export function VisionStudio() {
         </form>
 
         {/* Example problems */}
-        <div className="no-scrollbar -mx-1 mt-2.5 flex gap-1.5 overflow-x-auto px-1 pb-0.5">
+        <div ref={chipsRef} className="no-scrollbar -mx-1 mt-2.5 flex gap-1.5 overflow-x-auto px-1 pb-0.5">
           {visionIdeas.map((v) => {
             const active = v.id === idea.id;
             return (
               <button
                 key={v.id}
                 type="button"
+                aria-pressed={active}
                 onClick={() => start(v)}
                 className={cn(
                   "whitespace-nowrap rounded-full border px-3 py-1.5 text-[0.75rem] font-medium transition-colors",

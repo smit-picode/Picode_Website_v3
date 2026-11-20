@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ArrowUpRight, CalendarDays, Clock, FileText, Mail, Shield } from "lucide-react";
+import { ArrowUpRight, CalendarDays, FileText, Mail, Shield } from "lucide-react";
 import { LegalToc } from "@/components/legal/legal-toc";
 import { Container } from "@/components/ui/container";
 import { PageHero } from "@/components/ui/section";
@@ -16,11 +16,6 @@ type Props = {
   dateFormat?: DateFormat;
 };
 
-
-function readingMinutes(doc: LegalDocument) {
-  const text = doc.sections.flatMap((s) => s.body.map((b) => (typeof b === "string" ? b : b.list.join(" ")))).join(" ");
-  return Math.max(1, Math.round(text.split(/\s+/).length / 220));
-}
 
 /** Replaces {email} / {address} tokens with a link / the office address. */
 function renderText(text: string, email: string, address: string): ReactNode[] {
@@ -67,10 +62,6 @@ export function LegalDocumentView({ doc, email, address, related, dateFormat }: 
           <span className="inline-flex items-center gap-2">
             <CalendarDays className="size-4 text-secondary-strong" aria-hidden />
             Last updated <time dateTime={doc.updated} className="font-medium text-gray-700">{formatDate(`${doc.updated}T00:00:00Z`, dateFormat, { utc: true })}</time>
-          </span>
-          <span className="inline-flex items-center gap-2">
-            <Clock className="size-4 text-secondary-strong" aria-hidden />
-            {readingMinutes(doc)} min read
           </span>
           <Link href={related.href} className="group inline-flex items-center gap-1.5 font-medium text-gray-700 transition-colors hover:text-primary-strong">
             {related.label}

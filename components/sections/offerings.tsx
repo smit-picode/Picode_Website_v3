@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { Tilt } from "@/components/motion/primitives";
 import { ScrollHint, useAutoplay, useWheelSteps } from "@/components/motion/autoplay";
+import { useScrollActiveIntoView } from "@/components/motion/use-scroll-active-into-view";
 import { Container, Eyebrow } from "@/components/ui/container";
 import { cn } from "@/lib/utils";
 
@@ -544,6 +545,10 @@ export function OfferingsSection() {
 
   const select = (i: number) => auto.go(i);
 
+  // Phones/tablets: the tabs scroll sideways; keep the playing one visible.
+  const stripRef = useRef<HTMLDivElement>(null);
+  useScrollActiveIntoView(stripRef, [active]);
+
   function onKeyDown(e: KeyboardEvent<HTMLDivElement>) {
     const dir =
       e.key === "ArrowDown" || e.key === "ArrowRight" ? 1 : e.key === "ArrowUp" || e.key === "ArrowLeft" ? -1 : 0;
@@ -590,6 +595,7 @@ export function OfferingsSection() {
               <div ref={listRef} className="relative mt-6 lg:mt-8" {...auto.hoverProps}>
 
                 <div
+                  ref={stripRef}
                   role="tablist"
                   aria-label="Our offerings"
                   aria-orientation="vertical"

@@ -28,6 +28,8 @@ import {
   Sparkles,
   Workflow,
   BarChart3,
+  CircleHelp,
+  Factory,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -68,6 +70,8 @@ const itemIcons: Record<string, LucideIcon> = {
   "/services#web-mobile": Smartphone,
   "/services#workflow-automation": Workflow,
   "/services#data-driven-apps": BarChart3,
+  "/services#industries": Factory,
+  "/services#faq": CircleHelp,
   "/services#included": Palette,
   "/services#engagement": Handshake,
   "/services#accelerators": Blocks,
@@ -141,8 +145,6 @@ export function SitemapExplorer({ groups }: { groups: SitemapGroup[] }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { hubs, leaves } = useMemo(() => layout(groups), [groups]);
-  const all = groups.flatMap((g) => g.items);
-  const live = all.filter((i) => !i.soon).length;
   const visible = groups
     .map((g) => ({ ...g, items: g.items.filter((it) => matches(it, g.title, query)) }))
     .filter((g) => g.items.length > 0);
@@ -226,11 +228,6 @@ export function SitemapExplorer({ groups }: { groups: SitemapGroup[] }) {
               <kbd className="pointer-events-none absolute right-5 rounded-md border border-gray-200 bg-surface-muted px-2 py-0.5 font-mono text-xs text-gray-500">/</kbd>
             )}
           </label>
-          <div className="flex flex-wrap gap-2 text-xs">
-            <Stat value={all.length} label="pages" />
-            <Stat value={live} label="live" dot="bg-emerald-500" />
-            <Stat value={all.length - live} label="coming soon" dot="bg-amber-400" />
-          </div>
         </motion.div>
         <p className="sr-only" aria-live="polite">
           {query ? `${hitCount} pages match ${query}` : ""}
@@ -415,8 +412,6 @@ export function SitemapExplorer({ groups }: { groups: SitemapGroup[] }) {
         {/* legend + hover readout */}
         <div className="relative flex flex-wrap items-center justify-between gap-4 border-t border-gray-200/60 px-6 py-4 text-xs text-gray-500">
           <div className="flex flex-wrap items-center gap-5">
-            <span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-primary" /> Live page</span>
-            <span className="flex items-center gap-2"><span className="size-2.5 rounded-full border-2 border-amber-400" /> Coming soon</span>
             <span className="hidden items-center gap-2 lg:flex">Hover a section to focus it</span>
           </div>
           <AnimatePresence mode="wait">
@@ -437,7 +432,7 @@ export function SitemapExplorer({ groups }: { groups: SitemapGroup[] }) {
       {/* ---------------- Directory cards ---------------- */}
       {/* Two balanced columns (masonry): each card keeps its natural height and
           the last card in each column stretches, so both columns end level. */}
-      <div className="mt-14 grid gap-6 md:grid-cols-2">
+      <div className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-2">
         {balance(visible).map((column, ci) => (
         <div key={ci} className="flex flex-col gap-6">
         <AnimatePresence mode="popLayout">
@@ -584,15 +579,6 @@ function spotlight(e: MouseEvent<HTMLElement>) {
   const r = e.currentTarget.getBoundingClientRect();
   e.currentTarget.style.setProperty("--mx", `${e.clientX - r.left}px`);
   e.currentTarget.style.setProperty("--my", `${e.clientY - r.top}px`);
-}
-
-function Stat({ value, label, dot }: { value: number; label: string; dot?: string }) {
-  return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-gray-200/70 bg-surface px-3 py-1.5 text-gray-600">
-      {dot && <span className={cn("size-2 rounded-full", dot)} aria-hidden />}
-      <span className="font-display font-semibold text-gray-900">{value}</span> {label}
-    </span>
-  );
 }
 
 function Highlight({ text, query }: { text: string; query: string }) {

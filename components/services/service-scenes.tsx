@@ -37,7 +37,8 @@ function ModernizeScene() {
   const reduce = useReducedMotion();
   const tiles = ["Orders API", "Billing", "Customers", "Approvals", "Reports", "Agent hub"];
   return (
-    <div className="relative grid w-full max-w-[30rem] grid-cols-[0.8fr_auto_1.2fr] items-center gap-3">
+    // Phones: stacked (legacy card → connector → tiles) so the tile labels have room; sm+: side by side.
+    <div className="relative grid w-full max-w-[30rem] grid-cols-1 items-center gap-3 sm:grid-cols-[0.8fr_auto_1.2fr]">
       <div className={cn(card, "bg-slate-100 p-3 font-mono text-[0.625rem] text-slate-500")}>
         <p className="flex justify-between">
           <span>legacy.exe</span>
@@ -48,12 +49,12 @@ function ModernizeScene() {
         ))}
         <span className="mt-2 inline-block rounded bg-emerald-500 px-1.5 py-0.5 text-[0.5rem] font-semibold text-white">kept & wrapped</span>
       </div>
-      <div className="relative h-px w-10 bg-white/50">
+      <div className="relative mx-auto h-5 w-px bg-white/50 sm:mx-0 sm:h-px sm:w-10">
         {!reduce &&
           [0, 1].map((i) => (
             <motion.span
               key={i}
-              className="absolute -top-1 size-2 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.9)]"
+              className="absolute -top-1 hidden size-2 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.9)] sm:block"
               animate={{ left: ["0%", "100%"], opacity: [0, 1, 0] }}
               transition={{ duration: 1.6, repeat: Infinity, delay: i * 0.8 }}
             />

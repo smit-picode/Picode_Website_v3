@@ -201,7 +201,23 @@ export async function sendTestEmail(to: string): Promise<{ ok: true; source: str
     });
     return { ok: true, source: cfg.source };
   } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    return { ok: false, error: msg.replace(/\s+/g, " ").slice(0, 300) };
+    // Full details (server replies, hosts, addresses) stay in the server log only.
+    console.error("[mail] Test email failed:", error);
+    return { ok: false, error: friendlySmtpError(error) };
   }
+}
+
+/** A short, safe explanation of an SMTP failure: no raw server replies or internals. */
+function friendlySmtpError(error: unknown): string {
+  const e = error as { code?: string; responseCode?: number };
+  if (e?.code === "EAUTH" || e?.responseCode === 535 || e?.responseCode === 534) {
+    return "the mail server rejected the username or password.";
+  }
+  if (e?.code === "ETIMEDOUT" || e?.code === "ECONNECTION" || e?.code === "ECONNREFUSED" || e?.code === "EDNS" || e?.code === "ESOCKET") {
+    return "couldn't connect to the mail server. Check the server address, port and security setting.";
+  }
+  if (e?.code === "EENVELOPE" || (typeof e?.responseCode === "number" && e.responseCode >= 550 && e.responseCode < 560)) {
+    return "the mail server refused the sender or recipient address.";
+  }
+  return "the mail server returned an error. Check the settings and try again.";
 }

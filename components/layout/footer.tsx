@@ -109,12 +109,12 @@ export async function Footer() {
 
         <div className="mt-16 flex flex-col items-start justify-between gap-4 border-t border-white/10 pt-8 text-xs sm:flex-row sm:items-center">
           <p>© {year} Picode. All rights reserved.</p>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
             <Link href="/privacy" className="link-underline transition-colors hover:text-white">
-              Privacy
+              Privacy Policy
             </Link>
             <Link href="/terms" className="link-underline transition-colors hover:text-white">
-              Terms
+              Terms and Conditions
             </Link>
             <Link href="/sitemap" className="link-underline transition-colors hover:text-white">
               Sitemap
