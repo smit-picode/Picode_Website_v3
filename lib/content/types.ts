@@ -33,20 +33,46 @@ export const officeSchema = z.object({
 
 export type Office = z.infer<typeof officeSchema>;
 
-export const siteSettingsSchema = z.object({
-  generalEmail: z.string().trim().email("Enter a valid email"),
-  salesEmail: z.string().trim().email("Enter a valid email"),
-  careersEmail: z.string().trim().email("Enter a valid email"),
-  supportEmail: z.string().trim().email("Enter a valid email"),
-  responseTime: z.string().trim().min(2).max(60),
-  /** WhatsApp number with country code; the site assistant links to it. Empty = use the HQ office phone. */
-  whatsapp: z
-    .string()
-    .trim()
-    .regex(/^\+?[\d\s()-]{7,22}$/, "Use digits with the country code, e.g. +971 50 123 4567")
-    .or(z.literal(""))
-    .default(""),
-});
+/** Contact settings that can be switched off (hidden on the website) from the admin panel. */
+export const OPTIONAL_SETTINGS = ["generalEmail", "salesEmail", "careersEmail", "supportEmail", "responseTime", "whatsapp"] as const;
+export type OptionalSetting = (typeof OPTIONAL_SETTINGS)[number];
+
+const optionalEmail = z.string().trim().email("Enter a valid email").or(z.literal("")).default("");
+
+export const siteSettingsSchema = z
+  .object({
+    generalEmail: optionalEmail,
+    salesEmail: optionalEmail,
+    careersEmail: optionalEmail,
+    supportEmail: optionalEmail,
+    responseTime: z.string().trim().max(60).default(""),
+    /** WhatsApp number with country code; the site assistant links to it. Empty = use the HQ office phone. */
+    whatsapp: z
+      .string()
+      .trim()
+      .regex(/^\+?[\d\s()-]{7,22}$/, "Use digits with the country code, e.g. +971 50 123 4567")
+      .or(z.literal(""))
+      .default(""),
+    /** Which of the fields above appear on the website. Unticked = hidden (and not required). */
+    show: z
+      .object({
+        generalEmail: z.boolean(),
+        salesEmail: z.boolean(),
+        careersEmail: z.boolean(),
+        supportEmail: z.boolean(),
+        responseTime: z.boolean(),
+        whatsapp: z.boolean(),
+      })
+      .default({ generalEmail: true, salesEmail: true, careersEmail: true, supportEmail: true, responseTime: true, whatsapp: true }),
+  })
+  .superRefine((s, ctx) => {
+    for (const key of ["generalEmail", "salesEmail", "careersEmail", "supportEmail"] as const) {
+      if (s.show[key] && !s[key]) ctx.addIssue({ code: "custom", path: [key], message: "Add an email, or untick “Show on website”" });
+    }
+    if (s.show.responseTime && s.responseTime.length < 2) {
+      ctx.addIssue({ code: "custom", path: ["responseTime"], message: "Add a message, or untick “Show on website”" });
+    }
+  });
 
 export type SiteSettings = z.infer<typeof siteSettingsSchema>;
 

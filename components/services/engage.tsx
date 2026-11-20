@@ -6,7 +6,7 @@ import { ArrowRight, Check, Plus } from "lucide-react";
 import { Reveal } from "@/components/motion/primitives";
 import { ButtonLink } from "@/components/ui/button";
 import { Container, Eyebrow } from "@/components/ui/container";
-import { engagements, faqs } from "@/lib/content/services";
+import { useServicesContent } from "@/components/services/content-context";
 import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 /* ------------------------------------------------------------------ */
 
 export function EngagementModels() {
+  const { engagements } = useServicesContent();
   return (
     <section className="relative bg-surface-muted py-20 lg:py-28">
       <Container>
@@ -66,6 +67,7 @@ export function EngagementModels() {
 /* ------------------------------------------------------------------ */
 
 export function ServicesFaq() {
+  const { faqs } = useServicesContent();
   const [open, setOpen] = useState<number | null>(0);
   return (
     <section className="py-20 lg:py-28">
@@ -74,7 +76,7 @@ export function ServicesFaq() {
           <Eyebrow>FAQ</Eyebrow>
           <h2 className="mt-5 text-display-3">Questions we hear often</h2>
           <p className="mt-4 text-body-md text-gray-500">Something else on your mind? We reply within one business day.</p>
-          <ButtonLink href="/#contact" variant="outline" className="mt-6" rightIcon={<ArrowRight className="size-4" aria-hidden />}>
+          <ButtonLink href="/contact" variant="outline" className="mt-6" rightIcon={<ArrowRight className="size-4" aria-hidden />}>
             Ask us anything
           </ButtonLink>
         </Reveal>
@@ -136,7 +138,7 @@ export function ServicesCta() {
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-white/80">Six quick questions, about two minutes. A Picode lead replies within one business day.</p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <ButtonLink href="/#contact" size="lg" className="!bg-none bg-white !text-gray-900 ![text-shadow:none] hover:bg-white/90" rightIcon={<ArrowRight className="size-4" aria-hidden />}>
+              <ButtonLink href="/contact" size="lg" className="!bg-none bg-white !text-gray-900 ![text-shadow:none] hover:bg-white/90" rightIcon={<ArrowRight className="size-4" aria-hidden />}>
                 Start your brief
               </ButtonLink>
               <ButtonLink href="/#work" size="lg" variant="ghost" className="text-white hover:bg-white/10 hover:text-white">

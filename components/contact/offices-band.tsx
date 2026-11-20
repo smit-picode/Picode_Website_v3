@@ -8,7 +8,8 @@ import { ArrowUpRight, Briefcase, Clock, LifeBuoy, Mail, MapPin, Navigation, Pho
 import type { GlobePin, PointerRef } from "@/components/contact/globe-scene";
 import { Container, Eyebrow } from "@/components/ui/container";
 import { mapsUrl, officeCode, type Office, type SiteSettings } from "@/lib/content/types";
-import { cn } from "@/lib/utils";
+import { cn, replyWhen } from "@/lib/utils";
+import { clock, type TimeFormat } from "@/lib/format";
 
 // three.js + the land dots only load when the planet is about to be seen.
 const GlobeScene = dynamic(() => import("@/components/contact/globe-scene"), { ssr: false, loading: () => null });
@@ -40,9 +41,8 @@ function useLocalTime(timezone: string) {
   const h = local.getUTCHours();
   const day = local.getUTCDay();
   return {
-    hh: String(h % 12 || 12),
-    mm: String(local.getUTCMinutes()).padStart(2, "0"),
-    ampm: h < 12 ? "AM" : "PM",
+    h,
+    m: local.getUTCMinutes(),
     zone: timezone.split(" ")[0] ?? "",
     open: day >= 1 && day <= 5 && h >= 9 && h < 18,
   };
@@ -57,7 +57,7 @@ function useLocalTime(timezone: string) {
  * each office is a beacon with data streaming between them, and the office cards are
  * glass "node" panels. Ends in the footer's colour so the page closes seamlessly.
  */
-export function OfficesBand({ offices, settings }: { offices: Office[]; settings: SiteSettings }) {
+export function OfficesBand({ offices, settings, timeFormat = "12h" }: { offices: Office[]; settings: SiteSettings; timeFormat?: TimeFormat }) {
   const ref = useRef<HTMLDivElement>(null);
   const near = useInView(ref, { once: true, margin: "500px" });
   const reduce = useReducedMotion();
@@ -156,7 +156,7 @@ export function OfficesBand({ offices, settings }: { offices: Office[]; settings
                       i === 0 ? "left-0 top-[4%] xl:-left-6" : "right-0 top-[4%] xl:-right-6",
                     )}
                   >
-                    <NodeCard office={o} active={(pinHover ?? active) === o.id} onActive={setActive} side={i === 0 ? "left" : "right"} />
+                    <NodeCard office={o} active={(pinHover ?? active) === o.id} onActive={setActive} side={i === 0 ? "left" : "right"} timeFormat={timeFormat} />
                   </div>
                 ))}
               </div>
@@ -165,7 +165,7 @@ export function OfficesBand({ offices, settings }: { offices: Office[]; settings
         </div>
         <Container className={cn("relative -mt-6 grid gap-5 sm:grid-cols-2", floating && "lg:hidden")}>
           {offices.map((o) => (
-            <NodeCard key={o.id} office={o} active={(pinHover ?? active) === o.id} onActive={setActive} />
+            <NodeCard key={o.id} office={o} active={(pinHover ?? active) === o.id} onActive={setActive} timeFormat={timeFormat} />
           ))}
         </Container>
       </div>
@@ -187,11 +187,13 @@ function NodeCard({
   active,
   onActive,
   side,
+  timeFormat,
 }: {
   office: Office;
   active: boolean;
   onActive: (id: string | null) => void;
   side?: "left" | "right";
+  timeFormat: TimeFormat;
 }) {
   const t = useLocalTime(o.timezone);
   const code = officeCode(o);
@@ -240,7 +242,7 @@ function NodeCard({
         {t && (
           <span className={cn("flex items-center gap-1.5 font-mono text-[0.6875rem]", t.open ? "text-success" : "text-gray-400")}>
             <span className={cn("size-1.5 rounded-full", t.open ? "animate-pulse bg-success" : "bg-gray-300")} />
-            {t.hh}:{t.mm} {t.ampm} {t.zone}
+            {clock(t.h, t.m, timeFormat)} {t.zone}
           </span>
         )}
       </div>
@@ -294,19 +296,22 @@ function DirectLines({ settings }: { settings: SiteSettings }) {
     { icon: <Mail className="size-4" />, label: "Sales & partnerships", email: settings.salesEmail },
     { icon: <Briefcase className="size-4" />, label: "Careers", email: settings.careersEmail },
     { icon: <LifeBuoy className="size-4" />, label: "Support", email: settings.supportEmail },
-  ];
+  ].filter((it) => it.email);
+  if (!items.length) return null;
   return (
     <div className="mx-auto max-w-6xl">
       <div className="flex items-center justify-center gap-3 text-xs text-gray-500">
         <span className="h-px w-10 bg-gray-200" aria-hidden />
         <Clock className="size-3.5 text-primary-strong" aria-hidden />
-        Prefer email? We reply {settings.responseTime.toLowerCase()}.
+        Prefer email? We reply {replyWhen(settings.responseTime)}.
         <span className="h-px w-10 bg-gray-200" aria-hidden />
       </div>
-      <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Centred, so hiding an email in the admin never leaves a gap. */}
+      <ul className="mt-6 flex flex-wrap justify-center gap-3">
         {items.map((it, i) => (
           <motion.li
             key={it.label}
+            className="w-full sm:w-[calc(50%-0.375rem)] lg:w-[calc(25%-0.5625rem)]"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}

@@ -20,7 +20,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Tilt } from "@/components/motion/primitives";
-import { AutoplayControls, useAutoplay } from "@/components/motion/autoplay";
+import { ScrollHint, useAutoplay, useWheelSteps } from "@/components/motion/autoplay";
 import { Container, Eyebrow } from "@/components/ui/container";
 import { cn } from "@/lib/utils";
 
@@ -530,6 +530,10 @@ export function OfferingsSection() {
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   // Advances on its own every few seconds; tabs, arrows and the controls jump directly.
   const auto = useAutoplay(sectionRef, { stops: STOPS, hold: 5.5 });
+  // Scrolling over the list or the card steps through the offerings.
+  const listRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const wheel = useWheelSteps(auto, [listRef, cardRef], { hintKey: "offerings" });
   const active = auto.index;
   // Slide direction for the transition: forwards unless the visitor stepped back.
   const prevActive = useRef(active);
@@ -572,10 +576,10 @@ export function OfferingsSection() {
                     <motion.span
                       key={current.will}
                       className="inline-block text-gradient-primary"
-                      initial={{ opacity: 0, y: `${0.4 * direction}em`, filter: "blur(8px)" }}
-                      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                      exit={{ opacity: 0, y: `${-0.4 * direction}em`, filter: "blur(8px)" }}
-                      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                      initial={{ opacity: 0, y: `${0.35 * direction}em` }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: `${-0.35 * direction}em` }}
+                      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
                     >
                       {current.will.toLowerCase()}.
                     </motion.span>
@@ -583,7 +587,7 @@ export function OfferingsSection() {
                 </span>
               </h2>
 
-              <div className="relative mt-6 lg:mt-8" {...auto.hoverProps}>
+              <div ref={listRef} className="relative mt-6 lg:mt-8" {...auto.hoverProps}>
 
                 <div
                   role="tablist"
@@ -655,21 +659,29 @@ export function OfferingsSection() {
 
             {/* Right: stage */}
             <div
+              ref={cardRef}
               {...auto.hoverProps}
-              className="min-w-0 lg:col-span-7"
+              className="relative min-w-0 lg:col-span-7"
               id="offering-panel"
               role="tabpanel"
               aria-labelledby={`offering-tab-${active}`}
             >
+              <ScrollHint
+                show={wheel.hover || wheel.peek}
+                index={active}
+                count={COUNT}
+                noun="offering"
+                className="inset-x-0 -bottom-7 hidden lg:flex"
+              />
               <Tilt max={5} glare className="group rounded-[1.75rem]">
                 <div className="border-gradient relative overflow-hidden rounded-[1.75rem] bg-surface p-4 shadow-float sm:p-5">
                   <AnimatePresence mode="wait" initial={false}>
                     <motion.div
                       key={current.title}
-                      initial={{ opacity: 0, y: 28 * direction, scale: 0.98 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -20 * direction, scale: 0.98 }}
-                      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                      initial={{ opacity: 0, y: 14 * direction }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 * direction }}
+                      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
                     >
                       <current.Scene />
 
@@ -701,7 +713,7 @@ export function OfferingsSection() {
                         </ul>
 
                         <Link
-                          href="/#contact"
+                          href="/contact"
                           className="mt-6 inline-flex items-center gap-1.5 font-display text-sm font-semibold text-gradient-primary"
                         >
                           Discuss your idea
@@ -715,9 +727,6 @@ export function OfferingsSection() {
             </div>
           </Container>
 
-          <div className="relative mt-8 flex justify-center">
-            <AutoplayControls auto={auto} label="offering" />
-          </div>
         </div>
       </div>
     </section>

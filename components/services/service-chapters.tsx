@@ -6,12 +6,14 @@ import { ArrowRight, TrendingUp } from "lucide-react";
 import { Reveal } from "@/components/motion/primitives";
 import { SERVICE_STAGE as STAGE, ServiceScene } from "@/components/services/service-scenes";
 import { Container, Eyebrow } from "@/components/ui/container";
-import { services, type Service } from "@/lib/content/services";
+import { useServicesContent } from "@/components/services/content-context";
+import type { Service } from "@/lib/content/services";
 import { cn } from "@/lib/utils";
 
 
 export function ServiceChapters() {
-  const [active, setActive] = useState(services[0]!.id);
+  const { services } = useServicesContent();
+  const [active, setActive] = useState(services[0]?.id ?? "");
 
   // Highlight the service whose chapter is in the middle of the viewport.
   useEffect(() => {
@@ -24,7 +26,7 @@ export function ServiceChapters() {
     );
     els.forEach((el) => io.observe(el));
     return () => io.disconnect();
-  }, []);
+  }, [services]);
 
   return (
     <section id="services" className="relative bg-surface-muted py-20 lg:py-28">
@@ -168,7 +170,7 @@ function Chapter({ service: s, index }: { service: Service; index: number }) {
               {s.deliverables.join(" · ")}
             </p>
             <a
-              href="/#contact"
+              href="/contact"
               className="group inline-flex items-center gap-2 font-display text-sm font-semibold text-primary-strong"
             >
               Discuss {s.short.toLowerCase()}

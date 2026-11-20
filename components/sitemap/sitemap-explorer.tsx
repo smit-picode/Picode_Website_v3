@@ -20,7 +20,6 @@ import {
   LayoutGrid,
   Mail,
   MapPin,
-  MessageSquare,
   Palette,
   Scale,
   Search,
@@ -35,12 +34,7 @@ import {
 import { cn } from "@/lib/utils";
 import { FloatingSpheres } from "./floating-spheres";
 
-/**
- * Plain <a> (full load), not <Link>: on a client-side jump the home page's pinned
- * case-studies section is still sizing itself, so the scroll stops short of the
- * brief wizard. A fresh load lands exactly on "Let's build together".
- */
-const CONTACT_HREF = "/#contact";
+const CONTACT_HREF = "/contact";
 
 /**
  * Same reason for every home-section link ("/#offerings", "/#work"…): those do a
@@ -65,8 +59,7 @@ const itemIcons: Record<string, LucideIcon> = {
   "/#ai-native": Sparkles,
   "/#tech": Cpu,
   "/#work": FolderKanban,
-  "/#contact": MessageSquare,
-  "/#offices": MapPin,
+  "/contact#offices": MapPin,
   "/about": Building2,
   "/careers": Briefcase,
   "/contact": Mail,

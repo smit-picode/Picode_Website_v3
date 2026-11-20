@@ -32,3 +32,9 @@ const twMerge = extendTailwindMerge({
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+/** "within one business day" from the admin's response-time text; "soon" when it's switched off. */
+export function replyWhen(responseTime: string | undefined | null) {
+  const t = responseTime?.trim();
+  return t ? t.charAt(0).toLowerCase() + t.slice(1) : "soon";
+}

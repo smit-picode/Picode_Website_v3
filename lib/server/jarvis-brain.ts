@@ -1,7 +1,8 @@
 import "server-only";
 
 import { getSiteKnowledge, type KnowledgeSection, type SiteKnowledge } from "@/lib/server/jarvis-knowledge";
-import { getOffices, getSettings } from "@/lib/server/store";
+import { getOffices, getPublicSettings } from "@/lib/server/store";
+import { replyWhen } from "@/lib/utils";
 
 /**
  * Brain for the website's Jarvis assistant.
@@ -39,14 +40,14 @@ const MAX_KB_CHARS = 45_000;
 
 type Context = {
   site: SiteKnowledge;
-  settings: Awaited<ReturnType<typeof getSettings>>;
+  settings: Awaited<ReturnType<typeof getPublicSettings>>;
   offices: Awaited<ReturnType<typeof getOffices>>;
   /** Where to send people who want to talk: the contact page if live, else the home contact section. */
   contactHref: string;
 };
 
 async function context(): Promise<Context> {
-  const [site, settings, offices] = await Promise.all([getSiteKnowledge(), getSettings(), getOffices()]);
+  const [site, settings, offices] = await Promise.all([getSiteKnowledge(), getPublicSettings(), getOffices()]);
   const live = new Set(site.pages.map((p) => p.href));
   const contactHref = live.has("/contact") ? "/contact" : site.anchors.get("contact") ?? "/contact";
   return { site, settings, offices, contactHref };
@@ -308,7 +309,7 @@ const intents: Intent[] = [
   {
     test: /price|pricing|cost|budget|quote|rate card|how much/i,
     answer: (ctx) =>
-      `Pricing depends on scope and how we work together, so I'd rather not guess. Share your requirements through [contact](${ctx.contactHref}) or ${ctx.settings.salesEmail} and the team will reply ${ctx.settings.responseTime.toLowerCase()}.`,
+      `Pricing depends on scope and how we work together, so I'd rather not guess. Share your requirements through [contact](${ctx.contactHref}) or ${ctx.settings.salesEmail} and the team will reply ${replyWhen(ctx.settings.responseTime)}.`,
   },
   {
     test: /career|job|hiring|vacanc|intern|join (you|the team|picode)/i,
@@ -329,12 +330,12 @@ const intents: Intent[] = [
   {
     test: /how (fast|quick|quickly|soon|long)\b.*\b(reply|respond|answer|hear|get back)|response time/i,
     answer: (ctx) =>
-      `The team replies ${ctx.settings.responseTime.toLowerCase()}. The quickest way to reach them is the [contact form](${ctx.contactHref}) or ${ctx.settings.generalEmail}.`,
+      `The team replies ${replyWhen(ctx.settings.responseTime)}. The quickest way to reach them is the [contact form](${ctx.contactHref}) or ${ctx.settings.generalEmail}.`,
   },
   {
     test: /contact|e-?mail|phone|call|reach|talk to|meeting|demo|get in touch|start a project|work (together|with (you|picode))|hire (you|picode)|engage/i,
     answer: (ctx) =>
-      `Splendid. The quickest route is the [contact form](${ctx.contactHref}), or email ${ctx.settings.generalEmail}. The team responds ${ctx.settings.responseTime.toLowerCase()}.`,
+      `Splendid. The quickest route is the [contact form](${ctx.contactHref}), or email ${ctx.settings.generalEmail}. The team responds ${replyWhen(ctx.settings.responseTime)}.`,
   },
 ];
 

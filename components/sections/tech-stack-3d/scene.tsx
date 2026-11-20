@@ -1,8 +1,8 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useRef, type MutableRefObject } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Environment, Lightformer, RoundedBox, SoftShadows } from "@react-three/drei";
+import { Environment, Lightformer, PerformanceMonitor, RoundedBox, SoftShadows } from "@react-three/drei";
 import { Bloom, EffectComposer, N8AO, SMAA } from "@react-three/postprocessing";
 import { SUBJECT_LAYER, SubjectFocusEffect } from "@/components/sections/tech-stack-3d/subject-focus";
 import * as THREE from "three";
@@ -62,7 +62,8 @@ function useScreenScale(screenWidth: number, distance: number, designWidth: numb
 /**
  * Animation range in which each category's subject is settled (website scrolling,
  * chat playing, layers exploded…). Scroll inside a category plays only its own range;
- * the move to the next subject happens in a short window around the tab boundary.
+ * the move to the next subject takes most of the distance between two categories, so
+ * scrubbing with the wheel moves the scene continuously instead of in sudden jumps.
  */
 const HOLD: [number, number][] = [
   [0.0, 0.12], // frontend
@@ -72,7 +73,7 @@ const HOLD: [number, number][] = [
   [0.77, 0.83], // cloud & devops
   [0.94, 1.0], // data
 ];
-const EDGE = 0.14 / 6; // half-width of a transition window, in scroll units
+const EDGE = 0.05; // half-width of a transition window, in scroll units (~60% of a category)
 
 /** Scroll progress → animation progress. */
 export function warp(p: number) {
@@ -251,10 +252,12 @@ function Tracker({
 /* ------------------------------------------------------------------ */
 
 export default function TechScene({ progress, track, active, background, dark, onReady }: SceneProps) {
+  // Start at a moderate resolution; drop to 1× if the frame rate dips so scrubbing stays fluid.
+  const [dpr, setDpr] = useState(() => (typeof window === "undefined" ? 1 : Math.min(1.5, window.devicePixelRatio || 1)));
   return (
     <Canvas
       shadows
-      dpr={[1, 2]}
+      dpr={dpr}
       frameloop={active ? "always" : "never"}
       gl={{ antialias: false, powerPreference: "high-performance", stencil: false }}
       camera={{ fov: 30, near: 0.1, far: 80, position: [4.6, 3.1, 7.0] }}
@@ -263,6 +266,12 @@ export default function TechScene({ progress, track, active, background, dark, o
         gl.toneMappingExposure = 1.0;
       }}
     >
+      <PerformanceMonitor
+        onDecline={() => setDpr(1)}
+        onIncline={() => setDpr(Math.min(1.5, window.devicePixelRatio || 1))}
+        flipflops={3}
+        onFallback={() => setDpr(1)}
+      />
       <DarkCtx.Provider value={dark}>
         <World progress={progress} track={track} background={background} dark={dark} />
       </DarkCtx.Provider>
@@ -306,7 +315,7 @@ function World({
     <>
       <color attach="background" args={[background]} />
       <fog attach="fog" args={[background, 16, 34]} />
-      <SoftShadows size={28} samples={12} focus={0.7} />
+      <SoftShadows size={28} samples={8} focus={0.7} />
       <CameraRig progress={anim} focus={focus} />
       <Studio progress={anim} dark={dark} />
       <Backdrop background={background} dark={dark} />
@@ -1284,6 +1293,23 @@ function Cloud({ progress, reg }: { progress: MotionValue<number>; reg: Reg }) {
     });
     body.center();
     body.computeVertexNormals();
+    // Brand gradient baked into the mesh: teal at the base → sky blue at the top.
+    const pos = body.getAttribute("position");
+    let minY = Infinity;
+    let maxY = -Infinity;
+    for (let i = 0; i < pos.count; i++) {
+      minY = Math.min(minY, pos.getY(i));
+      maxY = Math.max(maxY, pos.getY(i));
+    }
+    const bottom = new THREE.Color("#0d9488");
+    const top = new THREE.Color("#38bdf8");
+    const c = new THREE.Color();
+    const colors = new Float32Array(pos.count * 3);
+    for (let i = 0; i < pos.count; i++) {
+      c.copy(bottom).lerp(top, (pos.getY(i) - minY) / (maxY - minY || 1));
+      c.toArray(colors, i * 3);
+    }
+    body.setAttribute("color", new THREE.BufferAttribute(colors, 3));
     const front = pts.map((p) => new THREE.Vector3(p.x * 1.0, p.y * 1.0 - 0.2, 0.245));
     const rim = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(front, true), 260, 0.011, 8, true);
     return { body, rim };
@@ -1320,30 +1346,31 @@ function Cloud({ progress, reg }: { progress: MotionValue<number>; reg: Reg }) {
     >
       <mesh geometry={body} castShadow receiveShadow>
         <meshPhysicalMaterial
-          color={dark ? "#1b2636" : "#ffffff"}
-          roughness={dark ? 0.32 : 0.38}
+          vertexColors
+          color="#ffffff"
+          roughness={0.3}
           clearcoat={1}
-          clearcoatRoughness={0.2}
-          sheen={1}
-          sheenColor={dark ? "#2dd4bf" : "#ccfbf1"}
-          sheenRoughness={0.5}
-          emissive={dark ? "#0b3b3a" : "#e6fffb"}
-          emissiveIntensity={dark ? 0.6 : 0.15}
+          clearcoatRoughness={0.15}
+          sheen={0.6}
+          sheenColor="#a5f3fc"
+          sheenRoughness={0.4}
+          emissive={dark ? "#0e7490" : "#0891b2"}
+          emissiveIntensity={dark ? 0.45 : 0.18}
         />
       </mesh>
       {/* glowing rim on the front face */}
       <mesh geometry={rim}>
-        <meshBasicMaterial color={[0.2, 1.6, 1.5]} toneMapped={false} />
+        <meshBasicMaterial color={[0.75, 2.2, 2.1]} toneMapped={false} />
       </mesh>
       {/* upload glyph */}
       <group position={[0, -0.05, 0.25]}>
         <mesh position={[0, -0.06, 0]}>
           <boxGeometry args={[0.07, 0.26, 0.02]} />
-          <meshBasicMaterial color={[0.25, 1.8, 1.7]} toneMapped={false} />
+          <meshBasicMaterial color={[1.6, 1.6, 1.6]} toneMapped={false} />
         </mesh>
         <mesh position={[0, 0.12, 0]}>
           <coneGeometry args={[0.13, 0.15, 3]} />
-          <meshBasicMaterial color={[0.25, 1.8, 1.7]} toneMapped={false} />
+          <meshBasicMaterial color={[1.6, 1.6, 1.6]} toneMapped={false} />
         </mesh>
       </group>
       {/* orbiting network ring with nodes */}

@@ -53,7 +53,8 @@ import {
 } from "@/lib/content/brief";
 import { contactSchema, type ContactResponse } from "@/lib/validations/contact";
 import { ProjectPreview } from "@/components/contact/project-preview";
-import { cn } from "@/lib/utils";
+import { takeBriefHandoff, type BriefHandoff } from "@/lib/brief-handoff";
+import { cn, replyWhen } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
 /* Questions                                                            */
@@ -131,13 +132,23 @@ export function BriefWizard({ responseTime }: { responseTime: string }) {
     setRef(`PC-${Math.floor(1000 + Math.random() * 9000)}`);
   }, []);
 
-  // "Solve mine" in the hero pre-fills the story.
+  // An idea typed elsewhere (homepage CTA, hero "Solve mine") pre-fills the brief.
   useEffect(() => {
-    function onPrefill(event: Event) {
-      const text = (event as CustomEvent<string>).detail;
-      if (typeof text !== "string") return;
+    function apply(data: BriefHandoff | null) {
+      if (!data) return;
+      const types = (data.types ?? []).filter((t) => (BRIEF_TYPES as readonly string[]).includes(t));
       setStatus("idle");
-      setA((prev) => ({ ...prev, story: text }));
+      setA((prev) => ({
+        ...prev,
+        story: data.story?.trim() ? data.story : prev.story,
+        types: types.length ? types : prev.types,
+      }));
+    }
+    apply(takeBriefHandoff());
+    function onPrefill(event: Event) {
+      const detail = (event as CustomEvent<BriefHandoff | string>).detail;
+      apply(typeof detail === "string" ? { story: detail } : detail);
+      takeBriefHandoff();
     }
     window.addEventListener("picode:prefill", onPrefill);
     return () => window.removeEventListener("picode:prefill", onPrefill);
@@ -852,7 +863,7 @@ function Done({ name, refNo, responseTime, onRestart }: { name: string; refNo: s
       </h3>
       <p className="mt-3 max-w-sm text-sm leading-relaxed text-gray-500">
         Reference <span className="font-mono font-semibold text-gray-900">{refNo}</span>. A Picode lead will reply{" "}
-        {responseTime.toLowerCase()} with next steps.
+        {replyWhen(responseTime)} with next steps.
       </p>
       <button
         type="button"

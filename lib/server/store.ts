@@ -3,7 +3,9 @@ import "server-only";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { defaultCaseStudies, defaultOffices, defaultSettings } from "@/lib/content/defaults";
-import type { CaseStudy, Inquiry, InquiryStatus, Office, SiteSettings } from "@/lib/content/types";
+import { DEFAULT_PREFERENCES, type Preferences } from "@/lib/format";
+import type { StoredSmtp } from "@/lib/content/mail";
+import { OPTIONAL_SETTINGS, type CaseStudy, type Inquiry, type InquiryStatus, type Office, type SiteSettings } from "@/lib/content/types";
 
 /**
  * Tiny JSON-file data store.
@@ -16,8 +18,11 @@ import type { CaseStudy, Inquiry, InquiryStatus, Office, SiteSettings } from "@/
 type Database = {
   offices: Office[];
   settings: SiteSettings;
+  preferences: Preferences;
   inquiries: Inquiry[];
   caseStudies: CaseStudy[];
+  /** Email (SMTP) settings from Admin → Settings. Never exported. */
+  smtp?: StoredSmtp;
 };
 
 const DATA_DIR = process.env.DATA_DIR ?? path.join(process.cwd(), "data");
@@ -27,6 +32,7 @@ function seed(): Database {
   return {
     offices: structuredClone(defaultOffices),
     settings: structuredClone(defaultSettings),
+    preferences: { ...DEFAULT_PREFERENCES },
     inquiries: [],
     caseStudies: structuredClone(defaultCaseStudies),
   };
@@ -39,7 +45,9 @@ async function readDb(): Promise<Database> {
     const base = seed();
     return {
       offices: parsed.offices ?? base.offices,
-      settings: { ...base.settings, ...parsed.settings },
+      settings: { ...base.settings, ...parsed.settings, show: { ...base.settings.show, ...parsed.settings?.show } },
+      preferences: { ...base.preferences, ...parsed.preferences },
+      smtp: parsed.smtp,
       inquiries: parsed.inquiries ?? [],
       caseStudies: parsed.caseStudies ?? base.caseStudies,
     };
@@ -98,10 +106,100 @@ export async function getSettings(): Promise<SiteSettings> {
   return (await readDb()).settings;
 }
 
+/**
+ * Settings as the public website should see them: fields switched off in the admin
+ * panel come back empty, so every page simply hides them.
+ */
+export async function getPublicSettings(): Promise<SiteSettings> {
+  const s = await getSettings();
+  const out = { ...s };
+  for (const key of OPTIONAL_SETTINGS) if (!s.show[key]) out[key] = "";
+  return out;
+}
+
+/** WhatsApp number for buttons: the one set in admin, else the HQ phone — or none if switched off. */
+export async function getWhatsAppNumber(): Promise<string> {
+  const [s, offices] = await Promise.all([getSettings(), getOffices()]);
+  if (!s.show.whatsapp) return "";
+  return s.whatsapp || (offices.find((o) => o.isHeadquarters) ?? offices[0])?.phone || "";
+}
+
 export function saveSettings(settings: SiteSettings) {
   return mutate((db) => {
     db.settings = settings;
     return settings;
+  });
+}
+
+/* --------------------------- Preferences --------------------------- */
+
+export async function getPreferences(): Promise<Preferences> {
+  return (await readDb()).preferences;
+}
+
+export function savePreferences(preferences: Preferences) {
+  return mutate((db) => {
+    db.preferences = preferences;
+  });
+}
+
+/* ------------------------------ Email ------------------------------ */
+
+export async function getSmtp(): Promise<StoredSmtp | undefined> {
+  return (await readDb()).smtp;
+}
+
+export function saveSmtp(smtp: StoredSmtp) {
+  return mutate((db) => {
+    db.smtp = smtp;
+  });
+}
+
+/* ------------------------ Export / import -------------------------- */
+
+export type StoreSnapshot = Pick<Database, "settings" | "preferences" | "offices" | "caseStudies" | "inquiries">;
+
+export async function readStoreSnapshot(): Promise<StoreSnapshot> {
+  const { settings, preferences, offices, caseStudies, inquiries } = await readDb();
+  return { settings, preferences, offices, caseStudies, inquiries };
+}
+
+type WithId = { id: string };
+function mergeById<T extends WithId>(current: T[], incoming: T[]) {
+  const out = [...current];
+  for (const item of incoming) {
+    const i = out.findIndex((c) => c.id === item.id);
+    if (i >= 0) out[i] = item;
+    else out.push(item);
+  }
+  return out;
+}
+
+/**
+ * Applies imported data to the JSON store in one write. "merge" adds new records and
+ * updates ones with the same id; "replace" swaps each provided collection wholesale.
+ */
+export function importStoreData(data: Partial<StoreSnapshot>, mode: "merge" | "replace") {
+  return mutate((db) => {
+    if (data.settings) db.settings = data.settings;
+    if (data.preferences) db.preferences = data.preferences;
+    if (data.offices) {
+      db.offices = mode === "replace" ? data.offices : mergeById(db.offices, data.offices);
+      // Exactly one headquarters at most.
+      let seenHq = false;
+      for (const o of [...db.offices].reverse()) {
+        if (o.isHeadquarters && seenHq) o.isHeadquarters = false;
+        else if (o.isHeadquarters) seenHq = true;
+      }
+    }
+    if (data.caseStudies) {
+      db.caseStudies = mode === "replace" ? data.caseStudies : mergeById(db.caseStudies, data.caseStudies);
+      [...db.caseStudies].sort((a, b) => a.order - b.order).forEach((c, k) => (c.order = k));
+    }
+    if (data.inquiries) {
+      db.inquiries = mode === "replace" ? data.inquiries : mergeById(db.inquiries, data.inquiries);
+      if (db.inquiries.length > 5_000) db.inquiries.splice(0, db.inquiries.length - 5_000);
+    }
   });
 }
 

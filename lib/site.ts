@@ -46,7 +46,4 @@ export const footerNav: { title: string; items: NavItem[] }[] = [
  * Remove an entry once its real page ships.
  */
 export const underDevelopmentRoutes: Record<string, string> = {
-  about: "About Us",
-  careers: "Careers",
-  contact: "Contact",
 };

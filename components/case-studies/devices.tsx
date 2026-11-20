@@ -288,11 +288,11 @@ export function PhoneFrame({
   return (
     <div
       className={cn(
-        "rounded-[18%/8.3%] bg-[#0d0f14] p-[3.2%] shadow-[0_40px_70px_-25px_rgba(15,23,42,0.55),0_10px_20px_-10px_rgba(15,23,42,0.3)] ring-1 ring-black/40",
+        "rounded-[18%/8.3%] bg-[#0d0f14] p-[0.7%] shadow-[0_40px_70px_-25px_rgba(15,23,42,0.55),0_10px_20px_-10px_rgba(15,23,42,0.3)] ring-1 ring-black/40",
         className,
       )}
     >
-      <div className="relative aspect-[9/19.5] overflow-hidden rounded-[15%/7%] bg-white [container-type:size]">
+      <div className="relative aspect-[9/19.5] overflow-hidden rounded-[17.3%/8%] bg-white [container-type:size]">
         <Scroller progress={progress}>
           {study.mobileImage ? (
             <img src={study.mobileImage} alt={`${study.name} app`} className="block w-full" draggable={false} />

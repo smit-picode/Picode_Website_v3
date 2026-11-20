@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from "react";
 import { AnimatePresence, animate, motion, useMotionValue, useMotionValueEvent, useReducedMotion, useTransform } from "framer-motion";
 import { Bot, Check, ChevronsLeftRight, Sparkles } from "lucide-react";
-import { services } from "@/lib/content/services";
+import { useServicesContent } from "@/components/services/content-context";
 import { cn } from "@/lib/utils";
 
 /**
@@ -19,6 +19,9 @@ const DH = 470;
 const HOLD_MS = 2200;
 
 export function ServiceFlow() {
+  // The scanner has a hand-made before/after pair per built-in service, so it cycles
+  // through as many services as it has visuals for.
+  const services = useServicesContent().services.slice(0, PAIRS.length);
   const reduce = useReducedMotion();
   const [active, setActive] = useState(0);
   const [dragging, setDragging] = useState(false);
@@ -54,7 +57,7 @@ export function ServiceFlow() {
       ctl.stop();
       window.clearTimeout(timer);
     };
-  }, [active, dragging, reduce, x]);
+  }, [active, dragging, reduce, x, services.length]);
 
   const drag = (e: PointerEvent<HTMLDivElement>) => {
     const r = e.currentTarget.getBoundingClientRect();

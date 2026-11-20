@@ -41,7 +41,7 @@ export const FAQS: Faq[] = [
     topic: "about",
     q: "Where are you based?",
     keys: ["where", "locat", "office", "address", "based", "bengaluru", "bangalore", "dubai", "india", "uae", "visit", "time ?zone"],
-    a: "We have two hubs: **Bengaluru, India** and **Dubai, UAE**, so we work across time zones and ship around the clock. You'll find addresses and directions in the [Offices section](/#contact).",
+    a: "We have two hubs: **Bengaluru, India** and **Dubai, UAE**, so we work across time zones and ship around the clock. You'll find addresses and directions on our [Contact page](/contact#offices).",
   },
   {
     id: "ai",
@@ -55,7 +55,7 @@ export const FAQS: Faq[] = [
     topic: "services",
     q: "Which service fits my project?",
     keys: ["service", "offer", "which (one|service)", "what can you (build|do|make)", "recommend", "suitable", "solution", "help (me|us) with", "can you (build|make|develop|create)", "develop"],
-    a: "A quick guide:\n- Old system slowing you down → **Agentic Modernization**\n- New product or app → **Web & Mobile Apps**\n- Too much manual work → **Workflow Automation**\n- Need visibility and insight → **Data-Driven Apps**\n\nNot sure? [Tell us about it](/#contact) and we'll recommend one.",
+    a: "A quick guide:\n- Old system slowing you down → **Agentic Modernization**\n- New product or app → **Web & Mobile Apps**\n- Too much manual work → **Workflow Automation**\n- Need visibility and insight → **Data-Driven Apps**\n\nNot sure? [Tell us about it](/contact) and we'll recommend one.",
   },
   {
     id: "legacy",
@@ -111,7 +111,7 @@ export const FAQS: Faq[] = [
     topic: "process",
     q: "How do we get started?",
     keys: ["get(ting)? started", "start", "begin", "kick ?off", "onboard", "next step", "hire (you|picode)", "work (with you|together)", "engage", "partner", "process", "how (do|does) (it|this) work"],
-    a: "It's simple:\n- Fill in the short [project brief](/#contact) (about two minutes)\n- A Picode lead replies within one business day\n- We usually begin with a **2–3 week discovery sprint** that ends in a scoped plan, timeline and estimate",
+    a: "It's simple:\n- Fill in the short [project brief](/contact) (about two minutes)\n- A Picode lead replies within one business day\n- We usually begin with a **2–3 week discovery sprint** that ends in a scoped plan, timeline and estimate",
   },
   {
     id: "time",
@@ -125,7 +125,7 @@ export const FAQS: Faq[] = [
     topic: "process",
     q: "How much does it cost?",
     keys: ["cost", "price", "pricing", "budget", "rates?\\b", "charge", "fees?\\b", "expensive", "cheap", "afford", "quot(e|ation)", "estimate", "how much", "\\$", "dollar", "rupee", "inr", "usd", "aed", "hourly", "payment"],
-    a: "It depends on scope. Projects typically range from **under $10k** for focused builds to **$100k+** for larger platforms. Share a few details in the [project brief](/#contact) and we'll come back with an estimate.",
+    a: "It depends on scope. Projects typically range from **under $10k** for focused builds to **$100k+** for larger platforms. Share a few details in the [project brief](/contact) and we'll come back with an estimate.",
   },
   {
     id: "ip",
@@ -217,7 +217,7 @@ export const INTENTS: Intent[] = [
       /\b(contact (you|picode|us|your team|the team)|get in touch|reach (you|out|picode|your team)|your (email|e-mail|phone|number|contact|whatsapp)|how (can|do) i (contact|reach|call|email|message))\b/,
     ],
     answers: [
-      "You can reach us any of these ways:\n- Send a [project brief](/#contact) (about two minutes)\n- Message us on **WhatsApp** using the button below\n- Or tell me your question here and I'll pass it to our team",
+      "You can reach us any of these ways:\n- Send a [project brief](/contact) (about two minutes)\n- Message us on **WhatsApp** using the button below\n- Or tell me your question here and I'll pass it to our team",
     ],
   },
   {

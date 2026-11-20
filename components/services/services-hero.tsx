@@ -6,7 +6,7 @@ import { ArrowDown, ArrowRight } from "lucide-react";
 import { Reveal } from "@/components/motion/primitives";
 import { ButtonLink } from "@/components/ui/button";
 import { Container, Eyebrow } from "@/components/ui/container";
-import { industries } from "@/lib/content/services";
+import { useServicesContent } from "@/components/services/content-context";
 import { cn } from "@/lib/utils";
 
 /**
@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
  * work flowing through AI into four clean outcomes.
  */
 export function ServicesHero() {
+  const { industries } = useServicesContent();
   const reduce = useReducedMotion();
 
   return (
@@ -36,7 +37,7 @@ export function ServicesHero() {
               AI is part of every step, and senior engineers own every outcome.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
-              <ButtonLink href="/#contact" size="lg" rightIcon={<ArrowRight className="size-4" aria-hidden />}>
+              <ButtonLink href="/contact" size="lg" rightIcon={<ArrowRight className="size-4" aria-hidden />}>
                 Start a project
               </ButtonLink>
               <ButtonLink href="#industries" variant="outline" size="lg" rightIcon={<ArrowDown className="size-4" aria-hidden />}>

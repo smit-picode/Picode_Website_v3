@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { listJobs } from "@/lib/server/careers";
 import { footerNav, mainNav, siteConfig, underDevelopmentRoutes } from "@/lib/site";
 
 /**
@@ -15,12 +16,18 @@ import { footerNav, mainNav, siteConfig, underDevelopmentRoutes } from "@/lib/si
  */
 const extraRoutes = ["/privacy", "/terms", "/sitemap"]; // linked from the footer bottom bar
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export const dynamic = "force-dynamic";
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteConfig.url.replace(/\/+$/, "");
   const hrefs = new Set<string>(["/"]);
   for (const item of mainNav) hrefs.add(item.href);
   for (const group of footerNav) for (const item of group.items) hrefs.add(item.href);
   for (const href of extraRoutes) hrefs.add(href);
+
+  // Each open role has its own page (skipped if the careers database is unavailable).
+  const jobs = await listJobs({ publishedOnly: true }).catch(() => []);
+  for (const j of jobs) hrefs.add(`/careers/${j.id}`);
 
   const lastModified = new Date();
   return [...hrefs]

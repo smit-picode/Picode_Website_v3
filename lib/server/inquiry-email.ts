@@ -1,50 +1,18 @@
 import "server-only";
 
-import nodemailer, { type Transporter } from "nodemailer";
+import type { Application } from "@/lib/content/careers";
 import type { Inquiry } from "@/lib/content/types";
+import { getMailConfig, transportFor } from "@/lib/server/mail-config";
 import { siteConfig } from "@/lib/site";
 
 /**
  * Emails the team whenever a new inquiry arrives (contact brief or the site assistant).
  *
- * Configure with SMTP env vars (works with Google Workspace/Gmail app passwords, Zoho,
- * Microsoft 365, SES, Brevo, Mailgun…):
- *   SMTP_HOST, SMTP_PORT (465 = TLS, 587 = STARTTLS), SMTP_USER, SMTP_PASS,
- *   MAIL_FROM            e.g. "Picode Website <no-reply@picode.ai>" (defaults to SMTP_USER)
- *   INQUIRY_NOTIFY_TO    comma-separated recipients, e.g. "sales@picode.ai, vishal@picode.ai"
- * Without SMTP_HOST or INQUIRY_NOTIFY_TO, notifications are skipped silently.
+ * SMTP comes from Admin → Settings → Email, or else the SMTP_* env vars (see
+ * lib/server/mail-config.ts). Works with Gmail/Google Workspace app passwords, Zoho,
+ * Microsoft 365, Mailjet, SES, Brevo, Mailgun… Without a configuration or recipients,
+ * notifications are skipped silently.
  */
-
-let transporter: Transporter | null = null;
-
-function getTransport(): Transporter | null {
-  const host = process.env.SMTP_HOST?.trim();
-  if (!host) return null;
-  if (transporter) return transporter;
-  const port = Number(process.env.SMTP_PORT || 587);
-  const user = process.env.SMTP_USER?.trim();
-  transporter = nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: user ? { user, pass: process.env.SMTP_PASS ?? "" } : undefined,
-    connectionTimeout: 10_000,
-    greetingTimeout: 10_000,
-    socketTimeout: 15_000,
-  });
-  return transporter;
-}
-
-function recipients(): string[] {
-  return (process.env.INQUIRY_NOTIFY_TO ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
-
-export function inquiryEmailEnabled() {
-  return Boolean(process.env.SMTP_HOST?.trim() && recipients().length);
-}
 
 const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -134,14 +102,15 @@ export function buildInquiryEmail(inq: Inquiry) {
 
 /** Sends the team notification. Never throws: the inquiry is already stored. */
 export async function sendInquiryNotification(inq: Inquiry): Promise<void> {
-  const transport = getTransport();
-  const to = recipients();
-  if (!transport || !to.length) return;
+  const cfg = await getMailConfig();
+  const to = cfg?.notifyTo ?? [];
+  if (!cfg || !to.length) return;
+  const transport = transportFor(cfg);
 
   const { subject, text, html } = buildInquiryEmail(inq);
   try {
     await transport.sendMail({
-      from: process.env.MAIL_FROM?.trim() || process.env.SMTP_USER?.trim(),
+      from: cfg.from,
       to,
       replyTo: { name: oneLine(inq.name), address: inq.email },
       subject,
@@ -150,5 +119,89 @@ export async function sendInquiryNotification(inq: Inquiry): Promise<void> {
     });
   } catch (error) {
     console.error("[contact] Email notification failed:", error);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Job applications                                                    */
+/* ------------------------------------------------------------------ */
+
+/** Tells the team about a new application (CAREERS_NOTIFY_TO, else INQUIRY_NOTIFY_TO). Never throws. */
+export async function sendApplicationNotification(app: Application): Promise<void> {
+  const cfg = await getMailConfig();
+  const to = cfg?.careersNotifyTo ?? [];
+  if (!cfg || !to.length) return;
+  const transport = transportFor(cfg);
+
+  const role = app.jobTitle ?? "Talent pool (no specific role)";
+  const adminUrl = `${siteConfig.url.replace(/\/$/, "")}/admin?tab=applications`;
+  const rows: [string, string][] = [
+    ["Role", role],
+    ["Name", app.name],
+    ["Email", app.email],
+    ...(app.phone ? [["Phone", app.phone] as [string, string]] : []),
+    ["Location", [app.city, app.country].filter(Boolean).join(", ")],
+    ["Experience", `${app.experienceYears} years${app.currentTitle ? ` · ${app.currentTitle}` : ""}`],
+    ["Skills", app.skills.join(", ")],
+    ["Languages", app.languages.join(", ")],
+    ...(app.workMode ? [["Work mode", app.workMode] as [string, string]] : []),
+    ...(app.noticePeriod ? [["Notice", app.noticePeriod] as [string, string]] : []),
+    ...(app.linkedin ? [["LinkedIn", app.linkedin] as [string, string]] : []),
+    ...(app.portfolio ? [["Portfolio", app.portfolio] as [string, string]] : []),
+  ];
+  const subject = oneLine(`New application: ${app.name} · ${role}`);
+  const text = [
+    `New job application · ${role}`,
+    "",
+    ...rows.map(([k, v]) => `${k}: ${v}`),
+    ...(app.note ? ["", "Note:", app.note] : []),
+    "",
+    `Resume and details: ${adminUrl}`,
+  ].join("\n");
+  const html = `<!doctype html><html><body style="margin:0;background:#f4f6f8;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f172a">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 12px"><tr><td align="center">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb">
+      <tr><td style="background-color:#14b8a6;background:linear-gradient(135deg,#14b8a6,#0ea5e9);padding:20px 24px;color:#fff">
+        <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.9">${esc(role)}</div>
+        <div style="font-size:20px;font-weight:700;margin-top:4px">New application from ${esc(app.name)}</div>
+      </td></tr>
+      <tr><td style="padding:20px 24px 4px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px">
+        ${rows.map(([k, v]) => `<tr><td style="padding:6px 0;color:#64748b;width:110px;vertical-align:top">${esc(k)}</td><td style="padding:6px 0;font-weight:600">${esc(v)}</td></tr>`).join("")}
+      </table></td></tr>
+      ${app.note ? `<tr><td style="padding:12px 24px 4px"><div style="font-size:14px;line-height:1.6;background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:14px 16px;white-space:pre-wrap">${esc(app.note)}</div></td></tr>` : ""}
+      <tr><td style="padding:20px 24px 24px"><a href="${esc(adminUrl)}" style="display:inline-block;background:#0d9488;color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:10px 18px;border-radius:999px">Review in admin</a></td></tr>
+    </table>
+    <div style="font-size:12px;color:#94a3b8;margin-top:12px">The resume is attached in the admin panel (not by email).</div>
+  </td></tr></table></body></html>`;
+
+  try {
+    await transport.sendMail({
+      from: cfg.from,
+      to,
+      replyTo: { name: oneLine(app.name), address: app.email },
+      subject,
+      text,
+      html,
+    });
+  } catch (error) {
+    console.error("[careers] Email notification failed:", error);
+  }
+}
+
+/** Admin → Settings → "Send test email". Returns a readable error instead of throwing. */
+export async function sendTestEmail(to: string): Promise<{ ok: true; source: string } | { ok: false; error: string }> {
+  const cfg = await getMailConfig();
+  if (!cfg) return { ok: false, error: "Email isn't configured yet." };
+  try {
+    await transportFor(cfg).sendMail({
+      from: cfg.from,
+      to,
+      subject: "Picode website · test email",
+      text: `This is a test from the Picode website admin.\n\nSMTP server: ${cfg.host}:${cfg.port}\nSettings from: ${cfg.source === "admin" ? "Admin → Settings" : ".env file"}\n\nIf you can read this, notifications will arrive.`,
+    });
+    return { ok: true, source: cfg.source };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    return { ok: false, error: msg.replace(/\s+/g, " ").slice(0, 300) };
   }
 }

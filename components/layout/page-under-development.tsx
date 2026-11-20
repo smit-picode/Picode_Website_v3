@@ -75,7 +75,7 @@ export function PageUnderDevelopment({ title }: PageUnderDevelopmentProps) {
             <ButtonLink href="/" size="lg" leftIcon={<ArrowLeft className="size-4" aria-hidden />}>
               Back to Home
             </ButtonLink>
-            <ButtonLink href="/#contact" size="lg" variant="outline">
+            <ButtonLink href="/contact" size="lg" variant="outline">
               Contact us
             </ButtonLink>
           </StaggerItem>

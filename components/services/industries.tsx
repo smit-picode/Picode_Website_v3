@@ -5,14 +5,16 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUpRight, ShieldCheck, X } from "lucide-react";
 import { Reveal } from "@/components/motion/primitives";
 import { Container, Eyebrow } from "@/components/ui/container";
-import { industries, services } from "@/lib/content/services";
+import { useServicesContent } from "@/components/services/content-context";
 import { cn } from "@/lib/utils";
 
-const serviceById = Object.fromEntries(services.map((s) => [s.id, s]));
 
 export function IndustriesExplorer() {
-  const [activeId, setActiveId] = useState(industries[0]!.id);
-  const ind = industries.find((i) => i.id === activeId)!;
+  const { industries, services } = useServicesContent();
+  const serviceById = Object.fromEntries(services.map((s) => [s.id, s]));
+  const [activeId, setActiveId] = useState(industries[0]?.id ?? "");
+  const ind = industries.find((i) => i.id === activeId) ?? industries[0];
+  if (!ind) return null;
   const Icon = ind.icon;
 
   return (

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { caseStudySchema, officeSchema, siteSettingsSchema, type CaseStudy, type InquiryStatus } from "@/lib/content/types";
+import { caseStudySchema, officeSchema, OPTIONAL_SETTINGS, siteSettingsSchema, type CaseStudy, type InquiryStatus } from "@/lib/content/types";
 import {
   checkAdminCredentials,
   endAdminSession,
@@ -12,6 +12,22 @@ import {
   startAdminSession,
 } from "@/lib/server/auth";
 import { deleteUpload, saveUpload, UploadError } from "@/lib/server/media";
+import { APPLICATION_STATUSES, jobFormSchema } from "@/lib/content/careers";
+import { servicesContentSchema } from "@/lib/content/services-content";
+import { DATE_FORMATS, TIME_FORMATS } from "@/lib/format";
+import { smtpFormSchema } from "@/lib/content/mail";
+import { sendTestEmail } from "@/lib/server/inquiry-email";
+import { seal } from "@/lib/server/secret-box";
+import { resetServicesContent, saveServicesContent } from "@/lib/server/site-content";
+import {
+  deleteApplication,
+  deleteJob,
+  jobIdTaken,
+  moveJob,
+  saveJob,
+  setApplicationStatus,
+  setJobPublished,
+} from "@/lib/server/careers";
 import { getClientIp, rateLimit } from "@/lib/server/rate-limit";
 import {
   deleteCaseStudy,
@@ -22,6 +38,9 @@ import {
   referencedMedia,
   upsertCaseStudy,
   saveSettings,
+  savePreferences,
+  getSmtp,
+  saveSmtp,
   setInquiryStatus,
   upsertOffice,
 } from "@/lib/server/store";
@@ -135,7 +154,9 @@ export async function deleteOfficeAction(id: string) {
 
 export async function saveSettingsAction(_prev: FormState, formData: FormData): Promise<FormState> {
   await requireAdmin();
-  const parsed = siteSettingsSchema.safeParse(Object.fromEntries(formData));
+  const raw = Object.fromEntries(formData) as Record<string, string>;
+  const show = Object.fromEntries(OPTIONAL_SETTINGS.map((k) => [k, raw[`show_${k}`] === "on"]));
+  const parsed = siteSettingsSchema.safeParse({ ...raw, show });
   if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error) };
 
   await saveSettings(parsed.data);
@@ -250,4 +271,148 @@ export async function setCaseStudyPublishedAction(id: string, published: boolean
   await upsertCaseStudy({ ...study, published: z.boolean().parse(published) });
   refreshPublicSite();
   revalidatePath("/admin");
+}
+
+/* ------------------------------ Careers ----------------------------- */
+
+function refreshCareers(jobIds: string[] = []) {
+  revalidatePath("/careers");
+  for (const id of jobIds) revalidatePath(`/careers/${id}`);
+  revalidatePath("/admin");
+}
+
+export async function saveJobAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  await requireAdmin();
+  const raw = Object.fromEntries(formData) as Record<string, string>;
+  const originalId = raw.originalId || undefined;
+  const parsed = jobFormSchema.safeParse({
+    ...raw,
+    id: raw.id || slugify(raw.title ?? ""),
+    published: raw.published === "on",
+  });
+  if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error) };
+  if (await jobIdTaken(parsed.data.id, originalId)) {
+    return { fieldErrors: { id: "Another job already uses this link. Pick a different one." } };
+  }
+
+  await saveJob(parsed.data, originalId);
+  refreshCareers([parsed.data.id, ...(originalId && originalId !== parsed.data.id ? [originalId] : [])]);
+  return { ok: true, message: `${parsed.data.title} saved.` };
+}
+
+export async function setJobPublishedAction(id: string, published: boolean) {
+  await requireAdmin();
+  const jobId = z.string().min(1).parse(id);
+  await setJobPublished(jobId, z.boolean().parse(published));
+  refreshCareers([jobId]);
+}
+
+export async function deleteJobAction(id: string) {
+  await requireAdmin();
+  const jobId = z.string().min(1).parse(id);
+  await deleteJob(jobId);
+  refreshCareers([jobId]);
+}
+
+export async function moveJobAction(id: string, direction: -1 | 1) {
+  await requireAdmin();
+  await moveJob(z.string().min(1).parse(id), z.union([z.literal(-1), z.literal(1)]).parse(direction));
+  refreshCareers();
+}
+
+export async function setApplicationStatusAction(id: string, status: string) {
+  await requireAdmin();
+  await setApplicationStatus(z.string().uuid().parse(id), z.enum(APPLICATION_STATUSES).parse(status));
+  revalidatePath("/admin");
+}
+
+export async function deleteApplicationAction(id: string) {
+  await requireAdmin();
+  await deleteApplication(z.string().uuid().parse(id));
+  revalidatePath("/admin");
+}
+
+/* ---------------------------- Preferences --------------------------- */
+
+const preferencesFormSchema = z.object({
+  dateFormat: z.enum(DATE_FORMATS),
+  timeFormat: z.enum(TIME_FORMATS),
+});
+
+export async function savePreferencesAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  await requireAdmin();
+  const parsed = preferencesFormSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error) };
+  await savePreferences(parsed.data);
+  refreshPublicSite();
+  revalidatePath("/admin");
+  return { ok: true, message: "Preferences saved." };
+}
+
+/* ------------------------------ Services ---------------------------- */
+
+export type ServicesSaveState = { ok?: boolean; error?: string; message?: string; issues?: string[] };
+
+export async function saveServicesContentAction(json: string): Promise<ServicesSaveState> {
+  await requireAdmin();
+  let raw: unknown;
+  try {
+    raw = JSON.parse(json);
+  } catch {
+    return { error: "Couldn't read the content." };
+  }
+  const parsed = servicesContentSchema.safeParse(raw);
+  if (!parsed.success) {
+    return {
+      error: "Some fields need attention.",
+      issues: parsed.error.issues.slice(0, 8).map((i) => `${i.path.join(" › ")}: ${i.message}`),
+    };
+  }
+  const ids = parsed.data.services.map((s) => s.id);
+  if (new Set(ids).size !== ids.length) return { error: "Two services share the same id." };
+  const indIds = parsed.data.industries.map((s) => s.id);
+  if (new Set(indIds).size !== indIds.length) return { error: "Two industries share the same id." };
+
+  await saveServicesContent(parsed.data);
+  revalidatePath("/services");
+  revalidatePath("/admin");
+  return { ok: true, message: "Services page saved." };
+}
+
+export async function resetServicesContentAction(): Promise<ServicesSaveState> {
+  await requireAdmin();
+  await resetServicesContent();
+  revalidatePath("/services");
+  revalidatePath("/admin");
+  return { ok: true, message: "Restored the original services content." };
+}
+
+/* ------------------------------- Email ------------------------------ */
+
+export async function saveSmtpAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  await requireAdmin();
+  const raw = Object.fromEntries(formData) as Record<string, string>;
+  const parsed = smtpFormSchema.safeParse({ ...raw, enabled: raw.enabled === "on", password: raw.password ?? "" });
+  if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error) };
+  const { password, ...rest } = parsed.data;
+  const current = await getSmtp();
+  // Blank password = keep the saved one; "clearPassword" removes it.
+  const passwordSealed = raw.clearPassword === "on" ? "" : password ? seal(password) : (current?.passwordSealed ?? "");
+  await saveSmtp({ ...rest, passwordSealed, updatedAt: new Date().toISOString() });
+  revalidatePath("/admin");
+  return { ok: true, message: rest.enabled ? "Email settings saved and in use." : "Saved. Email uses the .env settings while this is off." };
+}
+
+export async function sendTestEmailAction(to: string): Promise<{ ok: boolean; message: string }> {
+  await requireAdmin();
+  const address = z.string().trim().email().safeParse(to);
+  if (!address.success) return { ok: false, message: "Enter a valid email address to send the test to." };
+  const ip = getClientIp(headers());
+  if (!rateLimit(`smtp-test:${ip}`, { limit: 5, windowMs: 10 * 60_000 }).success) {
+    return { ok: false, message: "Too many test emails. Try again in a few minutes." };
+  }
+  const r = await sendTestEmail(address.data);
+  return r.ok
+    ? { ok: true, message: `Test email sent to ${address.data} (using ${r.source === "admin" ? "these settings" : "the .env settings"}).` }
+    : { ok: false, message: `Couldn't send: ${r.error}` };
 }

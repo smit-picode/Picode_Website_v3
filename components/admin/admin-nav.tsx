@@ -3,18 +3,22 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Building2, FolderKanban, Inbox, LayoutDashboard, Settings } from "lucide-react";
+import { Briefcase, Building2, FolderKanban, Inbox, Layers, LayoutDashboard, Mail, SlidersHorizontal, UserRoundSearch } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const adminTabs = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "inquiries", label: "Inquiries", icon: Inbox },
+  { id: "jobs", label: "Jobs", icon: Briefcase },
+  { id: "applications", label: "Applications", icon: UserRoundSearch },
+  { id: "services", label: "Services", icon: Layers },
   { id: "case-studies", label: "Case studies", icon: FolderKanban },
   { id: "offices", label: "Offices", icon: Building2 },
-  { id: "settings", label: "Contact settings", icon: Settings },
+  { id: "settings", label: "Contact settings", icon: Mail },
+  { id: "preferences", label: "Settings", icon: SlidersHorizontal },
 ] as const;
 
-export function AdminNav({ newCount }: { newCount: number }) {
+export function AdminNav({ newCount, newApplications = 0 }: { newCount: number; newApplications?: number }) {
   const current = useSearchParams().get("tab") ?? "overview";
 
   return (
@@ -36,6 +40,11 @@ export function AdminNav({ newCount }: { newCount: number }) {
             {id === "inquiries" && newCount > 0 && (
               <span className="rounded-full bg-gradient-primary px-1.5 py-px text-[0.6875rem] font-semibold text-white">
                 {newCount}
+              </span>
+            )}
+            {id === "applications" && newApplications > 0 && (
+              <span className="rounded-full bg-gradient-primary px-1.5 py-px text-[0.6875rem] font-semibold text-white">
+                {newApplications}
               </span>
             )}
             {active && (

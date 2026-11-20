@@ -90,7 +90,7 @@ export function Navbar() {
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <ButtonLink
-              href="/#contact"
+              href="/contact"
               size="sm"
               className="hidden sm:inline-flex"
               rightIcon={<ArrowUpRight className="size-4" aria-hidden />}
@@ -149,7 +149,7 @@ export function Navbar() {
                   ))}
                 </ul>
               </nav>
-              <ButtonLink href="/#contact" size="lg" className="mt-6 w-full">
+              <ButtonLink href="/contact" size="lg" className="mt-6 w-full">
                 Let&apos;s Talk
               </ButtonLink>
             </Container>

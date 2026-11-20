@@ -47,6 +47,7 @@ export const defaultSettings: SiteSettings = {
   supportEmail: "support@picode.ai",
   responseTime: "Within one business day",
   whatsapp: "",
+  show: { generalEmail: true, salesEmail: true, careersEmail: true, supportEmail: true, responseTime: true, whatsapp: true },
 };
 
 const study = (s: Omit<CaseStudy, "logo" | "desktopImage" | "mobileImage" | "url" | "published">): CaseStudy => ({

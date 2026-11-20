@@ -3,13 +3,12 @@ import { Footer } from "@/components/layout/footer";
 import { Navbar } from "@/components/layout/navbar";
 import { ScrollProgress } from "@/components/motion/scroll-progress";
 import { SmoothScroll } from "@/components/motion/smooth-scroll";
-import { getOffices, getSettings } from "@/lib/server/store";
+import { getPublicSettings, getWhatsAppNumber } from "@/lib/server/store";
 
 /** Public marketing site chrome (the /admin area has its own layout). */
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
-  const [settings, offices] = await Promise.all([getSettings(), getOffices()]);
-  // The assistant's WhatsApp button: the number set in admin, else the HQ office phone.
-  const whatsapp = settings.whatsapp || (offices.find((o) => o.isHeadquarters) ?? offices[0])?.phone || "";
+  // The assistant's WhatsApp button: the number set in admin, else the HQ phone (none if switched off).
+  const [settings, whatsapp] = await Promise.all([getPublicSettings(), getWhatsAppNumber()]);
 
   return (
     <>

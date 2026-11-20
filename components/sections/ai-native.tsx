@@ -16,7 +16,7 @@ import {
 import { Bot, Check, Code2, GitMerge, Lightbulb, Loader2, PenTool, RefreshCw, Rocket, ShieldCheck, Sparkles, User, Users, type LucideIcon } from "lucide-react";
 import { Reveal } from "@/components/motion/primitives";
 import { CopilotBot, NeuralBackdrop, RisingSparks, RobotSvg, ScanBeam, STAGE_BG } from "@/components/sections/ai-copilot";
-import { AutoplayControls, useAutoplay } from "@/components/motion/autoplay";
+import { ScrollHint, useAutoplay, useWheelSteps } from "@/components/motion/autoplay";
 import { ButtonLink } from "@/components/ui/button";
 import { Container, Eyebrow } from "@/components/ui/container";
 import { cn } from "@/lib/utils";
@@ -171,7 +171,7 @@ function RunSheet() {
               AI isn&apos;t a feature we bolt on. It&apos;s how we work. Every phase is augmented by intelligent
               tooling, and every launch feeds the next cycle.
             </p>
-            <ButtonLink href="/#contact" size="lg" className="mt-6">
+            <ButtonLink href="/contact" size="lg" className="mt-6">
               Start your project
             </ButtonLink>
           </div>
@@ -661,7 +661,10 @@ const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) /
 function AIStory() {
   const sectionRef = useRef<HTMLElement>(null);
   // Plays itself chapter by chapter while on screen (no scroll-pinning).
-  const auto = useAutoplay(sectionRef, { stops: CHAPTERS, hold: 6.5, travel: 1.1, drift: 0.9 });
+  const auto = useAutoplay(sectionRef, { stops: CHAPTERS, hold: 6.5, travel: 0.7, drift: 0.9 });
+  // Scrolling over the journey + chapter steps through the lifecycle.
+  const stageRef = useRef<HTMLDivElement>(null);
+  const wheel = useWheelSteps(auto, [stageRef], { hintKey: "lifecycle" });
   /** 0…N: 2.4 = 40% through chapter 3. */
   // Synced from the clock's events (not a render-time transform) so listeners never fire mid-render.
   const pos = useMotionValue(clampPos(auto.value.get()));
@@ -710,7 +713,14 @@ function AIStory() {
               </p>
             </div>
 
-            <div className="mt-8 flex min-h-0 flex-1 gap-6 xl:gap-8">
+            <div ref={stageRef} className="relative mt-8 flex min-h-0 flex-1 gap-6 xl:gap-8">
+            <ScrollHint
+              show={wheel.hover || wheel.peek}
+              index={active}
+              count={N}
+              noun="stage"
+              className="inset-x-0 -bottom-5"
+            />
             {/* the journey, top to bottom */}
             <Journey pos={pos} active={active} happy={happy} onSelect={goTo} />
 
@@ -723,7 +733,7 @@ function AIStory() {
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -12 }}
-                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                    transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
                   >
                     <p className="font-mono text-xs font-medium uppercase tracking-[0.2em] text-primary-strong">
                       Chapter {String(active + 1).padStart(2, "0")} · {phase.title}
@@ -758,7 +768,7 @@ function AIStory() {
                       initial={{ opacity: 0, y: 24, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -16, scale: 0.98 }}
-                      transition={{ type: "spring", stiffness: 160, damping: 22 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
                       className="theme-light relative mt-4 w-full max-w-[23rem]"
                     >
                       <Artifact index={active} local={local} />
@@ -768,9 +778,6 @@ function AIStory() {
                 </div>
               </div>
             </div>
-            </div>
-            <div className="mt-4 flex justify-center">
-              <AutoplayControls auto={auto} label="stage" />
             </div>
           </Container>
         </div>

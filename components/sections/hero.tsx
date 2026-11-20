@@ -43,7 +43,7 @@ export function HeroSection() {
             </StaggerItem>
 
             <StaggerItem className="mt-10 flex flex-wrap items-center gap-3">
-              <ButtonLink href="/#contact" size="lg" rightIcon={<ArrowRight className="size-4" aria-hidden />}>
+              <ButtonLink href="/contact" size="lg" rightIcon={<ArrowRight className="size-4" aria-hidden />}>
                 Start your project
               </ButtonLink>
               <ButtonLink href="/#offerings" size="lg" variant="outline">

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Outfit, Poppins } from "next/font/google";
+import { RouteLoader } from "@/components/layout/route-loader";
 import { Providers } from "@/components/providers";
 import { siteConfig } from "@/lib/site";
 import "./globals.css";
@@ -45,7 +46,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     // suppressHydrationWarning: next-themes sets the class before hydration.
     <html lang="en" className={`${outfit.variable} ${poppins.variable}`} suppressHydrationWarning>
       <body className="flex min-h-screen flex-col">
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <RouteLoader />
+        </Providers>
       </body>
     </html>
   );

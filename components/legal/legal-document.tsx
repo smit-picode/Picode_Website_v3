@@ -5,6 +5,7 @@ import { LegalToc } from "@/components/legal/legal-toc";
 import { Container } from "@/components/ui/container";
 import { PageHero } from "@/components/ui/section";
 import type { LegalBlock, LegalDocument } from "@/lib/content/legal";
+import { formatDate, type DateFormat } from "@/lib/format";
 
 type Props = {
   doc: LegalDocument;
@@ -12,10 +13,9 @@ type Props = {
   address: string;
   /** The companion document, linked from the hero. */
   related: { label: string; href: string };
+  dateFormat?: DateFormat;
 };
 
-const formatDate = (iso: string) =>
-  new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 
 function readingMinutes(doc: LegalDocument) {
   const text = doc.sections.flatMap((s) => s.body.map((b) => (typeof b === "string" ? b : b.list.join(" ")))).join(" ");
@@ -25,6 +25,12 @@ function readingMinutes(doc: LegalDocument) {
 /** Replaces {email} / {address} tokens with a link / the office address. */
 function renderText(text: string, email: string, address: string): ReactNode[] {
   return text.split(/(\{email\}|\{address\})/).map((part, i) => {
+    if (part === "{email}" && !email)
+      return (
+        <a key={i} href="/contact" className="font-medium text-primary-strong underline decoration-primary/30 underline-offset-4 transition-colors hover:decoration-primary">
+          our contact page
+        </a>
+      );
     if (part === "{email}")
       return (
         <a key={i} href={`mailto:${email}`} className="font-medium text-primary-strong underline decoration-primary/30 underline-offset-4 transition-colors hover:decoration-primary">
@@ -51,7 +57,7 @@ function Block({ block, email, address }: { block: LegalBlock; email: string; ad
 }
 
 /** Shared layout for /privacy and /terms: hero, highlights, sticky contents and the full text. */
-export function LegalDocumentView({ doc, email, address, related }: Props) {
+export function LegalDocumentView({ doc, email, address, related, dateFormat }: Props) {
   const Icon = doc.title.startsWith("Privacy") ? Shield : FileText;
 
   return (
@@ -60,7 +66,7 @@ export function LegalDocumentView({ doc, email, address, related }: Props) {
         <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-gray-500">
           <span className="inline-flex items-center gap-2">
             <CalendarDays className="size-4 text-secondary-strong" aria-hidden />
-            Last updated <time dateTime={doc.updated} className="font-medium text-gray-700">{formatDate(doc.updated)}</time>
+            Last updated <time dateTime={doc.updated} className="font-medium text-gray-700">{formatDate(`${doc.updated}T00:00:00Z`, dateFormat, { utc: true })}</time>
           </span>
           <span className="inline-flex items-center gap-2">
             <Clock className="size-4 text-secondary-strong" aria-hidden />

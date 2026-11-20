@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Archive, ChevronDown, Inbox, Mail, MailOpen, Reply, Search, Trash2 } from "lucide-react";
 import { deleteInquiryAction, setInquiryStatusAction } from "@/app/admin/actions";
 import type { Inquiry, InquiryStatus } from "@/lib/content/types";
+import { formatDateTime, type Preferences } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const filters: { id: "all" | InquiryStatus; label: string }[] = [
@@ -14,7 +15,7 @@ const filters: { id: "all" | InquiryStatus; label: string }[] = [
   { id: "archived", label: "Archived" },
 ];
 
-export function InquiryList({ inquiries }: { inquiries: Inquiry[] }) {
+export function InquiryList({ inquiries, preferences }: { inquiries: Inquiry[]; preferences: Preferences }) {
   const [filter, setFilter] = useState<"all" | InquiryStatus>("all");
   const [query, setQuery] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
@@ -122,7 +123,7 @@ export function InquiryList({ inquiries }: { inquiries: Inquiry[] }) {
                     <p className={cn("mt-0.5 text-sm text-gray-500", !open && "truncate")}>{open ? "" : item.message}</p>
                   </div>
                   <time className="shrink-0 pt-0.5 text-xs text-gray-400" dateTime={item.receivedAt}>
-                    {new Date(item.receivedAt).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    {formatDateTime(item.receivedAt, preferences)}
                   </time>
                   <ChevronDown className={cn("mt-0.5 size-4 shrink-0 text-gray-400 transition-transform", open && "rotate-180")} aria-hidden />
                 </button>

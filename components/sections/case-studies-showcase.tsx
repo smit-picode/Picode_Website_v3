@@ -13,7 +13,7 @@ import {
 } from "framer-motion";
 import { ArrowDown, ArrowUpRight, Plus } from "lucide-react";
 import { BrowserFrame, PhoneFrame, ProjectMark } from "@/components/case-studies/devices";
-import { AutoplayControls, useAutoplay } from "@/components/motion/autoplay";
+import { ScrollHint, useAutoplay, useWheelSteps } from "@/components/motion/autoplay";
 import { Container, Eyebrow } from "@/components/ui/container";
 import type { CaseStudy, PreviewKind } from "@/lib/content/types";
 import { cn } from "@/lib/utils";
@@ -47,7 +47,7 @@ const NEXT_UP: CaseStudy = {
   ],
   accent: "#0D9488",
   preview: "both",
-  url: "#contact",
+  url: "/contact",
   logo: "",
   desktopImage: "",
   mobileImage: "",
@@ -91,8 +91,10 @@ function Pinned({ studies: published }: { studies: CaseStudy[] }) {
   const N = studies.length;
   const trackRef = useRef<HTMLDivElement>(null);
   const stops = useMemo(() => studies.map((_, i) => i - PAD / 2), [studies]);
-  // Plays project by project while on screen; the screens keep scrolling while a project holds.
-  const auto = useAutoplay(trackRef, { stops, hold: 6, travel: 1.3, drift: PAD, wrap: "rewind" });
+  // Projects switch as the visitor scrolls over the stage (or clicks the dock) — no timer.
+  const auto = useAutoplay(trackRef, { stops, travel: 1.1, autoplay: false });
+  const stageRef = useRef<HTMLDivElement>(null);
+  const wheel = useWheelSteps(auto, [stageRef], { hintKey: "work" });
   /** Continuous project position. Integer = a project centred. */
   const pos = auto.value;
 
@@ -132,6 +134,7 @@ function Pinned({ studies: published }: { studies: CaseStudy[] }) {
         </Container>
 
         <motion.div
+          ref={stageRef}
           onPointerMove={onMove}
           onPointerEnter={auto.hoverProps.onPointerEnter}
           onPointerLeave={(e) => {
@@ -146,6 +149,8 @@ function Pinned({ studies: published }: { studies: CaseStudy[] }) {
           {studies.map((s, i) => (
             <Layer key={s.id} study={s} index={i} total={N} pos={pos} tiltX={tiltX} tiltY={tiltY} />
           ))}
+
+          <ScrollHint show={wheel.hover || wheel.peek} index={active} count={N} noun="project" className="inset-x-0 bottom-6" />
 
           {/* project dock */}
           <div className="absolute inset-x-0 top-5 z-30 flex justify-center">
@@ -176,7 +181,6 @@ function Pinned({ studies: published }: { studies: CaseStudy[] }) {
                         transition={{ type: "spring", stiffness: 400, damping: 34 }}
                       />
                     )}
-                    {on && <DockProgress progress={auto.holdProgress} color={s.accent} />}
                     <span className="relative flex items-center gap-1.5">
                       {s.id === NEXT_ID && <Plus className="size-3.5" aria-hidden />}
                       {s.id === NEXT_ID ? "Yours" : s.name}
@@ -187,22 +191,8 @@ function Pinned({ studies: published }: { studies: CaseStudy[] }) {
             </div>
           </div>
         </motion.div>
-
-        <div className="mt-4 flex justify-center">
-          <AutoplayControls auto={auto} label="project" />
-        </div>
       </div>
     </div>
-  );
-}
-
-function DockProgress({ progress, color }: { progress: MotionValue<number>; color: string }) {
-  return (
-    <motion.span
-      aria-hidden
-      style={{ scaleX: progress, background: color }}
-      className="absolute inset-x-4 bottom-0.5 h-0.5 origin-left rounded-full opacity-60"
-    />
   );
 }
 
@@ -386,7 +376,7 @@ function StageCopy({ study, lightAccent }: { study: CaseStudy; lightAccent: stri
       <p className="mt-4 max-w-md text-[0.9375rem] leading-relaxed text-white/75">{study.summary}</p>
       {study.id === NEXT_ID ? (
         <a
-          href="#contact"
+          href="/contact"
           className="group mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 font-display text-sm font-semibold shadow-lg transition-transform hover:-translate-y-0.5"
           style={{ color: mix(study.accent, 85) }}
         >

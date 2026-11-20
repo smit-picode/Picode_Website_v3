@@ -7,6 +7,7 @@ import { AdminNav } from "@/components/admin/admin-nav";
 import { Logo } from "@/components/layout/logo";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { requireAdmin } from "@/lib/server/auth";
+import { countNewApplications } from "@/lib/server/careers";
 import { listInquiries } from "@/lib/server/store";
 
 export const metadata: Metadata = {
@@ -19,6 +20,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await requireAdmin();
   const newCount = (await listInquiries()).filter((q) => q.status === "new").length;
+  const newApplications = await countNewApplications().catch(() => 0);
 
   return (
     <div className="min-h-screen bg-surface-muted">
@@ -26,9 +28,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <Logo href="/admin" className="h-8" />
-            <span className="rounded-full bg-gradient-primary px-2.5 py-0.5 font-display text-[0.6875rem] font-semibold uppercase tracking-wider text-white">
-              Admin
-            </span>
           </div>
           <div className="flex items-center gap-2">
             <span className="hidden text-sm text-gray-500 md:inline">{session.sub}</span>
@@ -53,7 +52,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Suspense>
-            <AdminNav newCount={newCount} />
+            <AdminNav newCount={newCount} newApplications={newApplications} />
           </Suspense>
         </div>
       </header>

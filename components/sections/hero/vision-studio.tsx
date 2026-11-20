@@ -5,6 +5,7 @@ import { AnimatePresence, motion, useInView } from "framer-motion";
 import { ArrowRight, Check, Lightbulb, MessagesSquare, PenTool, Rocket, RotateCcw, Send } from "lucide-react";
 import { VisionPreview } from "@/components/sections/hero/vision-preview";
 import { ideaFromPrompt, visionIdeas, type VisionIdea } from "@/components/sections/hero/vision-ideas";
+import { saveBriefHandoff } from "@/lib/brief-handoff";
 import { cn } from "@/lib/utils";
 
 /* Timeline (seconds) — when each message lands in the conversation */
@@ -258,14 +259,8 @@ export function VisionStudio() {
                   </button>
                 )}
                 <a
-                  href="#contact"
-                  onClick={() =>
-                    window.dispatchEvent(
-                      new CustomEvent("picode:prefill", {
-                        detail: `Hi Picode! Here's the problem we'd like to solve: ${idea.problem} `,
-                      }),
-                    )
-                  }
+                  href="/contact"
+                  onClick={() => saveBriefHandoff({ story: `Hi Picode! Here's the problem we'd like to solve: ${idea.problem} ` })}
                   className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-primary px-3.5 py-2 text-xs font-semibold text-white shadow-glow"
                 >
                   Solve mine <ArrowRight className="size-3.5" aria-hidden />

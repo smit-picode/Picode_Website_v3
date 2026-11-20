@@ -4,11 +4,11 @@ import { Logo } from "@/components/layout/logo";
 import { BackToTop, FooterWordmark } from "@/components/layout/footer-extras";
 import { Container } from "@/components/ui/container";
 import { CountryBadge } from "@/components/ui/country-badge";
-import { getOffices, getSettings } from "@/lib/server/store";
+import { getOffices, getPublicSettings } from "@/lib/server/store";
 import { footerNav } from "@/lib/site";
 
 export async function Footer() {
-  const [offices, settings] = await Promise.all([getOffices(), getSettings()]);
+  const [offices, settings] = await Promise.all([getOffices(), getPublicSettings()]);
   const year = new Date().getFullYear();
 
   return (
@@ -32,6 +32,7 @@ export async function Footer() {
               products that accelerate your growth.
             </p>
             <div className="mt-8 space-y-3 text-sm">
+              {settings.generalEmail && (
               <a
                 href={`mailto:${settings.generalEmail}`}
                 className="flex items-center gap-3 transition-colors hover:text-white"
@@ -39,6 +40,8 @@ export async function Footer() {
                 <Mail className="size-4 text-primary" aria-hidden />
                 {settings.generalEmail}
               </a>
+              )}
+              {settings.salesEmail && (
               <a
                 href={`mailto:${settings.salesEmail}`}
                 className="flex items-center gap-3 transition-colors hover:text-white"
@@ -47,6 +50,7 @@ export async function Footer() {
                 {settings.salesEmail}
                 <span className="rounded-full bg-white/5 px-2 py-0.5 text-[0.6875rem]">Sales</span>
               </a>
+              )}
             </div>
           </div>
 
@@ -90,7 +94,7 @@ export async function Footer() {
                 ))}
               </ul>
               <Link
-                href="/#contact"
+                href="/contact"
                 className="group mt-6 inline-flex items-center gap-1.5 font-display text-sm font-semibold text-gradient-primary"
               >
                 Start a project

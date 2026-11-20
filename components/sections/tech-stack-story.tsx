@@ -10,7 +10,7 @@ import {
   type MotionValue,
 } from "framer-motion";
 import { useTheme } from "next-themes";
-import { AutoplayControls, useAutoplay } from "@/components/motion/autoplay";
+import { ScrollHint, useAutoplay, useWheelSteps } from "@/components/motion/autoplay";
 import { TechStackExplorer, type TechCategory } from "@/components/sections/tech-stack-explorer";
 import { Callouts } from "@/components/sections/tech-stack-3d/callouts";
 import type { TrackStore } from "@/components/sections/tech-stack-3d/scene";
@@ -105,8 +105,13 @@ export function TechStackStory({ categories }: { categories: TechCategory[] }) {
 function Story({ scenes }: { scenes: TechCategory[] }) {
   const trackRef = useRef<HTMLDivElement>(null);
   // Plays scene by scene while on screen; the 3D transitions run between the settle points.
-  const auto = useAutoplay(trackRef, { stops: SETTLE, initial: 0, hold: 4.5, travel: 2.4, wrap: "rewind" });
+  const auto = useAutoplay(trackRef, { stops: SETTLE, initial: 0, hold: 5, travel: 3.4, wrap: "rewind" });
   const p = auto.value;
+  // Scrolling over the 3D stage steps through the layers.
+  const stageRef = useRef<HTMLDivElement>(null);
+  // Wheel over the stage scrubs the story in real time (~650px of scrolling per layer);
+  // tab clicks and autoplay glide between layers with the long transition above.
+  const wheel = useWheelSteps(auto, [stageRef], { hintKey: "tech", scrub: 0.88 / (5 * 650) });
   const [active, setActive] = useState(0);
   const near = useInView(trackRef, { once: true, margin: "600px" });
   const visible = useInView(trackRef, { margin: "100px" });
@@ -184,7 +189,7 @@ function Story({ scenes }: { scenes: TechCategory[] }) {
         </Container>
 
         {/* Stage */}
-        <div {...auto.hoverProps} className="relative min-h-0 flex-1 [mask-image:linear-gradient(to_bottom,black_86%,transparent)]">
+        <div ref={stageRef} {...auto.hoverProps} className="relative min-h-0 flex-1 [mask-image:linear-gradient(to_bottom,black_86%,transparent)]">
           {near ? (
             <>
               <TechScene
@@ -198,6 +203,7 @@ function Story({ scenes }: { scenes: TechCategory[] }) {
               {ready && <Callouts key={scene.id} category={scene} sceneIndex={active} track={track} />}
             </>
           ) : null}
+          <ScrollHint show={wheel.hover || wheel.peek} index={active} count={N} noun="layer" className="inset-x-0 bottom-[16%]" />
           {/* Loader until the 3D scene has downloaded and drawn its first frames */}
           <div
             className={cn(
@@ -207,9 +213,6 @@ function Story({ scenes }: { scenes: TechCategory[] }) {
           >
             <StagePlaceholder />
           </div>
-        </div>
-        <div className="relative z-20 flex justify-center pt-2">
-          <AutoplayControls auto={auto} label="layer" />
         </div>
       </div>
     </div>
